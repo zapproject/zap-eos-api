@@ -1,18 +1,17 @@
 WALLET_PWD = PW5KG8hve1T9HyfWUJJC5E5Q2vNSXEeQiLs6WpphFbwf2EAuAXPYW
 ACC_NAME = dispatcher.c
-CONTRACTS_PATH = ../
-
-build:
-	eosiocpp -o dispatcher.wast dispatcher.cpp
-	eosiocpp -g dispatcher.abi dispatcher.hpp
-	eosiocpp -o registry.wast registry.cpp
-	eosiocpp -g registry.abi registry.hpp
+PROJECT_DIR = /home/kostya/blockchain/zap_eos_contracts
+	
+build_contracts:
+	-mkdir $(PROJECT_DIR)/build
+	-mkdir $(PROJECT_DIR)/build/dispatcher
+	-mkdir $(PROJECT_DIR)/build/registry
+	eosiocpp -o $(PROJECT_DIR)/build/dispatcher/dispatcher.wast $(PROJECT_DIR)/src/dispatcher.cpp
+	eosiocpp -g $(PROJECT_DIR)/build/dispatcher/dispatcher.abi $(PROJECT_DIR)/src/dispatcher.hpp
+	eosiocpp -o $(PROJECT_DIR)/build/registry/registry.wast $(PROJECT_DIR)/src/registry.cpp
+	eosiocpp -g $(PROJECT_DIR)/build/registry/registry.abi $(PROJECT_DIR)/src/registry.hpp
+	
 deploy:
-	$(MAKE) deploy_with_unlock || $(MAKE) deploy_only
-deploy_with_unlock:
-	cleos wallet unlock --password $(WALLET_PWD)
-	cleos set contract $(ACC_NAME) ./ -p $(ACC_NAME)
-deploy_only:
-	echo Account is unlocked. Trying to deploy...
-	cleos set contract $(ACC_NAME) ./ -p $(ACC_NAME)
-
+	-cleos wallet unlock --password $(WALLET_PWD)
+	-cleos set contract $(ACC_NAME) $(PROJECT_DIR)/build/dispatcher -p $(ACC_NAME)
+	-cleos set contract $(ACC_NAME) $(PROJECT_DIR)/build/registry -p $(ACC_NAME)
