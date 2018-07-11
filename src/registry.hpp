@@ -1,4 +1,8 @@
+#pragma once
+
 #include <eosiolib/eosio.hpp>
+#include <eosiolib/crypto.h>
+#include <eosiolib/fixed_key.hpp>
 #include <string>
 #include <vector>
 
@@ -8,19 +12,21 @@ class Registry: public eosio::contract {
     public:
         using contract::contract;
 
-	//@abi table endpoint i64
+        // table endpoint i64
         struct endpoint {
             uint64_t id;
             account_name provider;
             std::string specifier;
+            key256 hash;
             std::vector<int64_t> constants;
             std::vector<uint64_t> parts;
             std::vector<uint64_t> dividers;
 
             uint64_t primary_key() const { return id; }
             uint64_t get_provider() const { return provider; }
-
-            EOSLIB_SERIALIZE(endpoint, (id)(provider)(specifier)(constants)(parts)(dividers))
+            key256 get_hash() const { return hash; }
+	    
+            EOSLIB_SERIALIZE(endpoint, (id)(provider)(specifier)(constants)(parts)(dividers)(hash))
 	};
 
 	//@abi table provider i64
@@ -50,12 +56,17 @@ class Registry: public eosio::contract {
         void viewps(uint64_t from, uint64_t to);
 
         //@abi action
-        void viewes(uint64_t from, uint64_t to);
+        void viewes(account_name provider, uint64_t from, uint64_t to);
+
+        //@abi action
+        void hashview(account_name provider, std::string specifier);
 
 
         typedef multi_index<N(provider), provider> providerIndex;
         typedef multi_index<N(endpoint), endpoint,
-				indexed_by<N(byprovider), const_mem_fun<endpoint, uint64_t, &endpoint::get_provider>>> endpointIndex;
+				indexed_by<N(byprovider), const_mem_fun<endpoint, uint64_t, &endpoint::get_provider>>,
+                                indexed_by<N(byhash), const_mem_fun<endpoint, key256, &endpoint::get_hash>>
+                           > endpointIndex;
 
     private:
 	std::string vector_to_string(std::vector<uint64_t> v) {
@@ -95,14 +106,48 @@ class Registry: public eosio::contract {
         // TODO: should be refactored to optimize search
         bool validateEndpoint(const Registry::endpointIndex &idx, account_name provider, std::string specifier) {
             auto iterator = idx.begin();
+            print("\niterator ok.\n");
             while (iterator != idx.end()) {
                 auto item = *iterator;
+                print("\nitem ok.\n");
                 if (item.specifier == specifier && item.provider == provider) return false;
                 iterator++;
             }
             return true;
         }
+
+        static key256* hash(account_name provider, std::string specifier) {
+            std::string provider_string = std::to_string(provider);
+            std::string concatenated = provider_string + specifier;
+
+            char *data = new char[concatenated.length() + 1];
+            strcpy(data, concatenated.c_str());
+
+            checksum256 hash_result;
+            sha256(data, sizeof(data), &hash_result);
+
+            delete [] data;
+            return checksum256_to_key256(hash_result);
+        }
+
+        static key256* checksum256_to_key256(checksum256 c) {
+            uint128_t first_word = 0;
+            uint128_t second_word = 0;
+
+            uint32_t half_size = sizeof(c.hash) / 2;
+            uint32_t byte_size = 8;
+            for (uint32_t i = 0; i < half_size; i++) {
+                first_word = (first_word << byte_size) + c.hash[(half_size - 1) - i];
+                second_word = (second_word << byte_size) + c.hash[((half_size * 2) - 1) - i];
+            }
+            print_f("First word = %\n", first_word);
+            print_f("Second word = %\n", second_word);
+
+            std::array<uint128_t, 2> words = { first_word, second_word };
+            key256* key(new key256(words));
+            return key;
+        }
 	    
 };
 
-EOSIO_ABI(Registry, (newprovider)(addendpoint)(viewps)(viewes))
+EOSIO_ABI(Registry, (newprovider)(addendpoint)(viewps)(viewes)(hashview))

@@ -1,5 +1,5 @@
 WALLET_PWD = PW5KG8hve1T9HyfWUJJC5E5Q2vNSXEeQiLs6WpphFbwf2EAuAXPYW
-ACC_NAME = dispatcher.c
+ACC_NAME = cs.owner
 PROJECT_DIR = /home/kostya/blockchain/zap_eos_contracts
 	
 build_contracts:
