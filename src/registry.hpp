@@ -116,21 +116,32 @@ class Registry: public eosio::contract {
             return true;
         }
 
-        static key256* hash(account_name provider, std::string specifier) {
+        key256 hash(account_name provider, std::string specifier) {
             std::string provider_string = std::to_string(provider);
             std::string concatenated = provider_string + specifier;
+            uint32_t result_size = concatenated.length() + 1;
 
-            char *data = new char[concatenated.length() + 1];
+            print_f("conc = %\n", concatenated);
+
+            char *data = new char[result_size];
             strcpy(data, concatenated.c_str());
 
+            const char *c_data = (const char*) data;
+            print_f("data  = %\n size = %\n", c_data, result_size);
+
             checksum256 hash_result;
-            sha256(data, sizeof(data), &hash_result);
+            sha256(data, result_size, &hash_result);
+
+            for (uint32_t i = 0; i < sizeof(hash_result.hash); i++) {
+                print_f("%", std::to_string(hash_result.hash[i]));
+            }
+            print("\n");
 
             delete [] data;
             return checksum256_to_key256(hash_result);
         }
 
-        static key256* checksum256_to_key256(checksum256 c) {
+        key256 checksum256_to_key256(checksum256 c) {
             uint128_t first_word = 0;
             uint128_t second_word = 0;
 
@@ -144,8 +155,7 @@ class Registry: public eosio::contract {
             print_f("Second word = %\n", second_word);
 
             std::array<uint128_t, 2> words = { first_word, second_word };
-            key256* key(new key256(words));
-            return key;
+            return key256(words);
         }
 	    
 };

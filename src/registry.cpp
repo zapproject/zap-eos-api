@@ -29,9 +29,9 @@ void Registry::addendpoint(account_name provider, std::string specifier, std::ve
     auto iterator = providers.find(provider);
     eosio_assert(iterator != providers.end(), "Provider not found!");
 
-    key256* hash = Registry::hash(provider, specifier);
+    key256 hash = Registry::hash(provider, specifier);
 
-    print_f("Hash = % %", hash->data()[0], hash->data()[1]);
+    print_f("Hash = % %", hash.data()[0], hash.data()[1]);
 
     // Check that provider doesn't have this specifier 
     eosio_assert(Registry::validateEndpoint(*endpoints, provider, specifier), "Endpoint already exists!");
@@ -45,11 +45,12 @@ void Registry::addendpoint(account_name provider, std::string specifier, std::ve
 	newEndpoint.constants = constants;
 	newEndpoint.parts = parts;
         newEndpoint.dividers = dividers;
-        newEndpoint.hash = *hash;
+        newEndpoint.hash = hash;
     });
+    
+     print_f("Hash after save = % % size = %", hash.data()[0], hash.data()[1], sizeof(hash.data()));
 
     delete endpoints;
-    delete hash;
 }
 
 void Registry::viewps(uint64_t from, uint64_t to) {
@@ -77,8 +78,8 @@ void Registry::viewes(account_name provider, uint64_t from, uint64_t to) {
         std::string constants = Registry::vector_to_string(item.constants);
         std::string parts = Registry::vector_to_string(item.parts);
         std::string dividers = Registry::vector_to_string(item.dividers);
-        print_f("endpoint #%: provider = %, specifier = %, constants = %, parts = %, dividers = %, hash = %;\n", counter, item.provider, item.specifier, constants, parts, 
-            dividers, sizeof(item.hash.data()));
+        print_f("endpoint #%: provider = %, specifier = %, constants = %, parts = %, dividers = %, hash = % %;\n", counter, item.provider, item.specifier, constants, parts, 
+            dividers, item.hash.data()[0], item.hash.data()[1]);
         counter++;
         endpointsIterator++;
    }  
@@ -87,8 +88,8 @@ void Registry::viewes(account_name provider, uint64_t from, uint64_t to) {
 void Registry::hashview(account_name provider, std::string specifier) {
      Registry::endpointIndex endpoints(_self, provider);
      auto idx = endpoints.get_index<N(byhash)>();
-     key256* hash = Registry::hash(provider, specifier);
-     auto hashItr = idx.lower_bound(*hash);
+     key256 hash = Registry::hash(provider, specifier);
+     auto hashItr = idx.lower_bound(hash);
      auto item = endpoints.get(hashItr->id);
      std::string constants = Registry::vector_to_string(item.constants);
      std::string parts = Registry::vector_to_string(item.parts);
