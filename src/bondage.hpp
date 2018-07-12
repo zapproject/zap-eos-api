@@ -14,13 +14,12 @@ class Bondage: public eosio::contract {
         struct holder {
             account_name provider;
             std::string endpoint;
-            uint256_t sha256hash; // hash to be able to find holder without loop
             uint64_t dots;
 
             uint64_t primary_key() const { return provider; }
-            uint256_t get_hash() const { return sha256hash; }
+            key256 get_hash() const { return Registry::hash(provider, specifier); }
 
-            EOSLIB_SERIALIZE(endpoint, (provider)(endpoint)(sha256hash)(dots))
+            EOSLIB_SERIALIZE(endpoint, (provider)(endpoint)(dots))
         }
         
         // MAIN METHODS
@@ -55,7 +54,13 @@ class Bondage: public eosio::contract {
          }
 
          Registry::endpoint get_endpoint(account_name provider, std::string endpoint_specifier) {
-             return Registry::endpoint();
+             Registry::endpointIndex endpoints(_self, provider);
+
+             auto idx = endpoints.get_index<N(byhash)>();
+             key256 hash = key256(Registry::hash(provider, specifier));
+             auto hashItr = idx.find(hash);
+             auto item = endpoints.get(hashItr->id);
+             return item;
          }
 
 };

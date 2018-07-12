@@ -12,21 +12,24 @@ class Registry: public eosio::contract {
     public:
         using contract::contract;
 
-        // table endpoint i64
+        //@!abi table endpoint i64
         struct endpoint {
             uint64_t id;
             account_name provider;
             std::string specifier;
-            key256 hash;
             std::vector<int64_t> constants;
             std::vector<uint64_t> parts;
             std::vector<uint64_t> dividers;
 
             uint64_t primary_key() const { return id; }
             uint64_t get_provider() const { return provider; }
-            key256 get_hash() const { return hash; }
+            
+            // EXPERIMENTAL FEATURE
+            // I haven't found any examples of key256 usage, but, according doc, multi_index supports 256 bytes secondary keys 
+            // this secondary key allows to find item by using find() method
+            key256 get_hash() const { return Registry::hash(provider, specifier); }
 	    
-            EOSLIB_SERIALIZE(endpoint, (id)(provider)(specifier)(constants)(parts)(dividers)(hash))
+            EOSLIB_SERIALIZE(endpoint, (id)(provider)(specifier)(constants)(parts)(dividers))
 	};
 
 	//@abi table provider i64
@@ -59,7 +62,7 @@ class Registry: public eosio::contract {
         void viewes(account_name provider, uint64_t from, uint64_t to);
 
         //@abi action
-        void hashview(account_name provider, std::string specifier);
+        void endpbyhash(account_name provider, std::string specifier);
 
 
         typedef multi_index<N(provider), provider> providerIndex;
@@ -106,42 +109,35 @@ class Registry: public eosio::contract {
         // TODO: should be refactored to optimize search
         bool validateEndpoint(const Registry::endpointIndex &idx, account_name provider, std::string specifier) {
             auto iterator = idx.begin();
-            print("\niterator ok.\n");
             while (iterator != idx.end()) {
                 auto item = *iterator;
-                print("\nitem ok.\n");
                 if (item.specifier == specifier && item.provider == provider) return false;
                 iterator++;
             }
             return true;
         }
 
-        key256 hash(account_name provider, std::string specifier) {
+        // TODO: must be reviewed
+        // Does this hash will be always unique?
+        static key256 hash(account_name provider, std::string specifier) {
             std::string provider_string = std::to_string(provider);
             std::string concatenated = provider_string + specifier;
             uint32_t result_size = concatenated.length() + 1;
 
-            print_f("conc = %\n", concatenated);
-
             char *data = new char[result_size];
             strcpy(data, concatenated.c_str());
-
-            const char *c_data = (const char*) data;
-            print_f("data  = %\n size = %\n", c_data, result_size);
 
             checksum256 hash_result;
             sha256(data, result_size, &hash_result);
 
-            for (uint32_t i = 0; i < sizeof(hash_result.hash); i++) {
-                print_f("%", std::to_string(hash_result.hash[i]));
-            }
-            print("\n");
-
             delete [] data;
-            return checksum256_to_key256(hash_result);
+            return key256(checksum256_to_uint128array(hash_result));
         }
 
-        key256 checksum256_to_key256(checksum256 c) {
+        // TODO: must be reviewed
+        // !!! according this doc https://developers.eos.io/eosio-cpp/docs/random-number-generation checksum element is 4 bytes (uin32_t == int) length
+        // !!! but in sources it is 1 byte length (uint8_t == unsigned char)
+        static std::array<uint128_t, 2> checksum256_to_uint128array(checksum256 c) {
             uint128_t first_word = 0;
             uint128_t second_word = 0;
 
@@ -151,13 +147,11 @@ class Registry: public eosio::contract {
                 first_word = (first_word << byte_size) + c.hash[(half_size - 1) - i];
                 second_word = (second_word << byte_size) + c.hash[((half_size * 2) - 1) - i];
             }
-            print_f("First word = %\n", first_word);
-            print_f("Second word = %\n", second_word);
-
+         
             std::array<uint128_t, 2> words = { first_word, second_word };
-            return key256(words);
+            return words;
         }
 	    
 };
 
-EOSIO_ABI(Registry, (newprovider)(addendpoint)(viewps)(viewes)(hashview))
+EOSIO_ABI(Registry, (newprovider)(addendpoint)(viewps)(viewes)(endpbyhash))
