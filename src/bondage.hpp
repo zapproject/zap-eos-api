@@ -1,26 +1,13 @@
 #pragma once
 
-#include <eosiolib/eosio.hpp>
 #include <registry.hpp>
-#include <string>
-#include <vector>
+#include <db.hpp>
 
 using namespace eosio;
 
 class Bondage: public eosio::contract {
     public:
         using contract::contract;
-        
-        struct holder {
-            account_name provider;
-            std::string endpoint;
-            uint64_t dots;
-
-            uint64_t primary_key() const { return provider; }
-            key256 get_hash() const { return Registry::hash(provider, specifier); }
-
-            EOSLIB_SERIALIZE(endpoint, (provider)(endpoint)(dots))
-        }
         
         // MAIN METHODS
 
@@ -38,7 +25,7 @@ class Bondage: public eosio::contract {
 
         //@abi action
         //View specified endpoint dots for specified holder
-        void viewe(account_name holder, uint256_t hash);
+        void viewhe(account_name holder, uint256_t hash);
 
         //@abi action
         //View all endpoints for specified holder
@@ -49,15 +36,11 @@ class Bondage: public eosio::contract {
              return 0;             
          }
 
-         uint256_t calc_holder_hash(account_name provider, std::string endpoint_specifier) {
-             return 0;
-         }
-
-         Registry::endpoint get_endpoint(account_name provider, std::string endpoint_specifier) {
-             Registry::endpointIndex endpoints(_self, provider);
+         db::endpoint get_endpoint(account_name provider, std::string endpoint_specifier) {
+             db::endpointIndex endpoints(_self, provider);
 
              auto idx = endpoints.get_index<N(byhash)>();
-             key256 hash = key256(Registry::hash(provider, specifier));
+             key256 hash = key256(db::hash(provider, specifier));
              auto hashItr = idx.find(hash);
              auto item = endpoints.get(hashItr->id);
              return item;

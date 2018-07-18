@@ -3,7 +3,7 @@
 void Registry::newprovider(account_name provider, std::string title, uint64_t key) {
     require_auth(provider);
 
-    Registry::providerIndex providers(_self, _self);
+    db::providerIndex providers(_self, _self);
 
     print_f("new provider: user = %, title = %, public_key = %", provider, title, key);
 
@@ -19,8 +19,8 @@ void Registry::newprovider(account_name provider, std::string title, uint64_t ke
 void Registry::addendpoint(account_name provider, std::string specifier, std::vector<int64_t> constants, std::vector<uint64_t> parts, std::vector<uint64_t> dividers) { 
     require_auth(provider);
 
-    Registry::providerIndex providers(_self, _self);
-    Registry::endpointIndex endpoints(_self, provider); //= new Registry::endpointIndex(_self, provider);
+    db::providerIndex providers(_self, _self);
+    db::endpointIndex endpoints(_self, provider);
 
     // Check that provider exists
     auto iterator = providers.find(provider);
@@ -39,23 +39,12 @@ void Registry::addendpoint(account_name provider, std::string specifier, std::ve
 	newEndpoint.parts = parts;
         newEndpoint.dividers = dividers;
     });
-
-    auto idx = endpoints.get_index<N(byhash)>();
-    key256 key = key256(Registry::hash(provider, specifier));
-    auto hashItr = idx.lower_bound(key);
-    auto item = endpoints.get(hashItr->id);
-    std::string constants_str = Registry::vector_to_string(item.constants);
-    std::string parts_str = Registry::vector_to_string(item.parts);
-    std::string dividers_str = Registry::vector_to_string(item.dividers);
-    print_f("endpoint: provider = %, specifier = %, constants = %, parts = %, dividers = %;\n", item.provider, item.specifier, constants_str, parts_str, dividers_str);
-
-    //delete endpoints;
 }
 
 void Registry::viewps(uint64_t from, uint64_t to) {
     eosio_assert(from <= to, "'from' value must be lower or equal than 'to' value.");
 
-    Registry::providerIndex providers(_self, _self);
+    db::providerIndex providers(_self, _self);
 
     auto iterator = providers.begin();
     uint64_t counter = 0;
@@ -68,7 +57,7 @@ void Registry::viewps(uint64_t from, uint64_t to) {
 }
 
 void Registry::viewes(account_name provider, uint64_t from, uint64_t to) {
-    Registry::endpointIndex endpoints(_self, provider);
+    db::endpointIndex endpoints(_self, provider);
 
     auto endpointsIterator = endpoints.begin();
     uint64_t counter = 0;
@@ -87,10 +76,10 @@ void Registry::viewes(account_name provider, uint64_t from, uint64_t to) {
 // EXPERIMENTAL FEATURE
 // CURRENTLY IT WORKS, BUT IT MUST BE TESTED
 void Registry::endpbyhash(account_name provider, std::string specifier) {
-     Registry::endpointIndex endpoints(_self, provider);
+     db::endpointIndex endpoints(_self, provider);
 
      auto idx = endpoints.get_index<N(byhash)>();
-     key256 hash = key256(Registry::hash(provider, specifier));
+     key256 hash = key256(db::hash(provider, specifier));
      auto hashItr = idx.find(hash);
      auto item = endpoints.get(hashItr->id);
 
