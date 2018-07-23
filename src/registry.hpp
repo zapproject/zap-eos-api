@@ -1,6 +1,6 @@
 #pragma once
 
-#include <db.hpp>
+#include <database.hpp>
 
 using namespace eosio;
 

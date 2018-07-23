@@ -4,12 +4,12 @@
 #include <string>
 #include <vector>
 
+using namespace eosio;
+
 namespace db {
-    typedef multi_index<N(provider), provider> providerIndex;
-    typedef multi_index<N(endpoint), endpoint,
-                indexed_by<N(byprovider), const_mem_fun<endpoint, uint64_t, &endpoint::get_provider>>,
-                indexed_by<N(byhash), const_mem_fun<endpoint, key256, &endpoint::get_hash>>
-            > endpointIndex;
+
+    static std::array<uint128_t, 2> checksum256_to_uint128array(checksum256 c);
+    static key256 hash(account_name provider, std::string specifier);
 
     // TODO: must be reviewed
     // Does this hash will be always unique?
@@ -46,7 +46,7 @@ namespace db {
         return words;
     }
 
-    //@!abi table endpoint i64
+    //@abi table endpoint i64
     struct endpoint {
         uint64_t id;
         account_name provider;
@@ -54,16 +54,17 @@ namespace db {
         std::vector<int64_t> constants;
         std::vector<uint64_t> parts;
         std::vector<uint64_t> dividers;
+        uint128_t issued;
 
         uint64_t primary_key() const { return id; }
         uint64_t get_provider() const { return provider; }
            
         // EXPERIMENTAL FEATURE
         // I haven't found any examples of key256 usage, but, according doc, multi_index supports 256 bytes secondary keys 
-        // this secondary key allows to find item by using find() method
-        key256 get_hash() const { return Registry::hash(provider, specifier); }
+        // this secondary key allows to find item with specified provider and specifier by using find() method
+        key256 get_hash() const { return db::hash(provider, specifier); }
 	  
-        EOSLIB_SERIALIZE(endpoint, (id)(provider)(specifier)(constants)(parts)(dividers))
+        EOSLIB_SERIALIZE(endpoint, (id)(provider)(specifier)(constants)(parts)(dividers)(issued))
     };
 
     //@abi table provider i64
@@ -77,6 +78,7 @@ namespace db {
         EOSLIB_SERIALIZE(provider, (user)(title)(key))
     };
 
+    //@abi table holder i64
     struct holder {
         account_name provider;
         std::string endpoint;
@@ -84,8 +86,17 @@ namespace db {
         uint64_t escrow;
 
         uint64_t primary_key() const { return provider; }
-        key256 get_hash() const { return Registry::hash(provider, specifier); }
+        key256 get_hash() const { return db::hash(provider, endpoint); }
 
-        EOSLIB_SERIALIZE(endpoint, (provider)(endpoint)(dots))
-    }     
+        EOSLIB_SERIALIZE(holder, (provider)(endpoint)(dots)(escrow))
+    };     
+
+    typedef multi_index<N(provider), provider> providerIndex;
+    typedef multi_index<N(endpoint), endpoint,
+                indexed_by<N(byprovider), const_mem_fun<endpoint, uint64_t, &endpoint::get_provider>>,
+                indexed_by<N(byhash), const_mem_fun<endpoint, key256, &endpoint::get_hash>>
+            > endpointIndex;
+    typedef multi_index<N(holder), holder,
+                indexed_by<N(byhash), const_mem_fun<holder, key256, &holder::get_hash>>
+            > holderIndex;
 }

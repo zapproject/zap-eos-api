@@ -1,11 +1,11 @@
-#include <registry.hpp>
+#include "registry.hpp"
 
 void Registry::newprovider(account_name provider, std::string title, uint64_t key) {
     require_auth(provider);
 
     db::providerIndex providers(_self, _self);
 
-    print_f("new provider: user = %, title = %, public_key = %", provider, title, key);
+    print_f("new provider: user = %, title = %, public_key = %", name{provider}, title, key);
 
     // Save new provider
     // Will throw exception if provider exists
@@ -38,6 +38,7 @@ void Registry::addendpoint(account_name provider, std::string specifier, std::ve
 	newEndpoint.constants = constants;
 	newEndpoint.parts = parts;
         newEndpoint.dividers = dividers;
+        newEndpoint.issued = 0;
     });
 }
 
@@ -50,7 +51,7 @@ void Registry::viewps(uint64_t from, uint64_t to) {
     uint64_t counter = 0;
     while (iterator != providers.end() && counter <= (to - from)) {
         auto item = *iterator;
-        print_f("provider #%: user = %, public_key = %, title = %;", counter, item.user, item.key, item.title);
+        print_f("provider #%: user = %, public_key = %, title = %;", counter, name{item.user}, item.key, item.title);
         iterator++;
         counter++;
     }
@@ -66,7 +67,7 @@ void Registry::viewes(account_name provider, uint64_t from, uint64_t to) {
         std::string constants = Registry::vector_to_string(item.constants);
         std::string parts = Registry::vector_to_string(item.parts);
         std::string dividers = Registry::vector_to_string(item.dividers);
-        print_f("endpoint #%: provider = %, specifier = %, constants = %, parts = %, dividers = %\n", counter, item.provider, item.specifier, constants, parts, dividers);
+        print_f("endpoint #%: provider = %, specifier = %, constants = %, parts = %, dividers = %, issued = %.\n", counter, name{item.provider}, item.specifier, constants, parts, dividers, item.issued);
 
         counter++;
         endpointsIterator++;
@@ -86,7 +87,7 @@ void Registry::endpbyhash(account_name provider, std::string specifier) {
      std::string constants = Registry::vector_to_string(item.constants);
      std::string parts = Registry::vector_to_string(item.parts);
      std::string dividers = Registry::vector_to_string(item.dividers);
-     print_f("endpoint: provider = %, specifier = %, constants = %, parts = %, dividers = %;\n", item.provider, item.specifier, constants, parts, dividers);
+     print_f("endpoint: provider = %, specifier = %, constants = %, parts = %, dividers = %, issued = %.\n", name{item.provider}, item.specifier, constants, parts, dividers, item.issued);
 }
 
 
