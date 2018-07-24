@@ -28,7 +28,7 @@ class Registry: public eosio::contract {
         //@abi action
         void endpbyhash(account_name provider, std::string specifier);
 
-    private:
+    private:        
 	std::string vector_to_string(std::vector<uint64_t> v) {
             std::string str = "[";
             

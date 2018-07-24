@@ -38,7 +38,6 @@ void Registry::addendpoint(account_name provider, std::string specifier, std::ve
 	newEndpoint.constants = constants;
 	newEndpoint.parts = parts;
         newEndpoint.dividers = dividers;
-        newEndpoint.issued = 0;
     });
 }
 
@@ -67,7 +66,7 @@ void Registry::viewes(account_name provider, uint64_t from, uint64_t to) {
         std::string constants = Registry::vector_to_string(item.constants);
         std::string parts = Registry::vector_to_string(item.parts);
         std::string dividers = Registry::vector_to_string(item.dividers);
-        print_f("endpoint #%: provider = %, specifier = %, constants = %, parts = %, dividers = %, issued = %.\n", counter, name{item.provider}, item.specifier, constants, parts, dividers, item.issued);
+        print_f("endpoint #%: provider = %, specifier = %, constants = %, parts = %, dividers = %.\n", counter, name{item.provider}, item.specifier, constants, parts, dividers);
 
         counter++;
         endpointsIterator++;
@@ -87,7 +86,7 @@ void Registry::endpbyhash(account_name provider, std::string specifier) {
      std::string constants = Registry::vector_to_string(item.constants);
      std::string parts = Registry::vector_to_string(item.parts);
      std::string dividers = Registry::vector_to_string(item.dividers);
-     print_f("endpoint: provider = %, specifier = %, constants = %, parts = %, dividers = %, issued = %.\n", name{item.provider}, item.specifier, constants, parts, dividers, item.issued);
+     print_f("endpoint: provider = %, specifier = %, constants = %, parts = %, dividers = %.\n", name{item.provider}, item.specifier, constants, parts, dividers);
 }
 
 

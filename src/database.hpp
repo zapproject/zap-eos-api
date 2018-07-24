@@ -1,6 +1,7 @@
 #include <eosiolib/eosio.hpp>
 #include <eosiolib/crypto.h>
 #include <eosiolib/fixed_key.hpp>
+#include <eosiolib/asset.hpp>
 #include <string>
 #include <vector>
 
@@ -54,7 +55,6 @@ namespace db {
         std::vector<int64_t> constants;
         std::vector<uint64_t> parts;
         std::vector<uint64_t> dividers;
-        uint128_t issued;
 
         uint64_t primary_key() const { return id; }
         uint64_t get_provider() const { return provider; }
@@ -64,7 +64,7 @@ namespace db {
         // this secondary key allows to find item with specified provider and specifier by using find() method
         key256 get_hash() const { return db::hash(provider, specifier); }
 	  
-        EOSLIB_SERIALIZE(endpoint, (id)(provider)(specifier)(constants)(parts)(dividers)(issued))
+        EOSLIB_SERIALIZE(endpoint, (id)(provider)(specifier)(constants)(parts)(dividers))
     };
 
     //@abi table provider i64
@@ -91,6 +91,16 @@ namespace db {
         EOSLIB_SERIALIZE(holder, (provider)(endpoint)(dots)(escrow))
     };     
 
+    //@abi table issued i64
+    struct issued {
+        uint64_t endpointid;
+        uint64_t dots;
+        
+        uint64_t primary_key() const { return endpointid; }
+
+        EOSLIB_SERIALIZE(issued, (endpointid)(dots))
+    };
+
     typedef multi_index<N(provider), provider> providerIndex;
     typedef multi_index<N(endpoint), endpoint,
                 indexed_by<N(byprovider), const_mem_fun<endpoint, uint64_t, &endpoint::get_provider>>,
@@ -99,4 +109,5 @@ namespace db {
     typedef multi_index<N(holder), holder,
                 indexed_by<N(byhash), const_mem_fun<holder, key256, &holder::get_hash>>
             > holderIndex;
+    typedef multi_index<N(issued), issued> issuedIndex;
 }
