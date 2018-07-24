@@ -162,6 +162,21 @@ void Bondage::escrow(account_name subscriber, account_name provider, std::string
 
 void Bondage::release(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots) {
     require_auth(subscriber);
+
+    db::holderIndex holders(_self, subscriber);
+
+    auto idx = holders.get_index<N(byhash)>();
+    key256 hash = key256(db::hash(provider, endpoint));
+    auto holders_iterator = idx.find(hash);
+
+    eosio_assert(holders_iterator != idx.end(), "Holder not found.");
+    eosio_assert(holders_iterator->escrow >= dots, "Not enough escrow dots.");
+ 
+    holders.modify(holders_iterator, subscriber, [&] (auto& h) {
+        h.dots = h.dots + dots;
+        h.escrow = h.escrow - dots;
+    });   
+    print_f("Escrow updated, escrow dots removed = %.", dots);
 }
 
 void Bondage::viewhe(account_name holder, account_name provider, std::string endpoint) {
