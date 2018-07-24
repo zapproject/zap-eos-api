@@ -21,7 +21,13 @@ class Bondage: public eosio::contract {
         void estimate(account_name provider, std::string endpoint, uint64_t dots);
 
         //@abi action
-        void init(account_name registry);
+        void escrow(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots);
+
+        //@abi action
+        void release(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots);
+
+        //@abi action
+        void init(account_name registry, account_name dispatch);
 
         
         // VIEW METHODS
@@ -40,6 +46,7 @@ class Bondage: public eosio::contract {
     private:
         const std::string ZAP_TOKEN_SYMBOL = "TST";
         account_name zap_registry = N(zap.registry);
+        account_name zap_dispatch = N(zap.dispatch);
 
         eosio::asset toAsset(uint64_t tokensAmount) {
             return asset(tokensAmount, symbol_type(string_to_symbol(0, "TST")));
@@ -49,6 +56,16 @@ class Bondage: public eosio::contract {
             uint64_t price = 0;
             for (uint64_t i = 0; i < dots_to_buy; i++) {
                 uint64_t current_dot = i + total_issued + 1;
+                price += calc_dot_price(provider, endpoint, current_dot);
+            }
+            
+            return price;
+        }
+
+        uint64_t get_withdraw_price(account_name provider, std::string endpoint, uint64_t total_issued, uint64_t dots_to_withdraw) {
+            uint64_t price = 0;
+            for (uint64_t i = 0; i < dots_to_withdraw; i++) {
+                uint64_t current_dot = total_issued - i;
                 price += calc_dot_price(provider, endpoint, current_dot);
             }
             
@@ -102,11 +119,19 @@ class Bondage: public eosio::contract {
             return item;
         }
 
-        void make_payment(account_name from, uint64_t amount) {
+        void take_tokens(account_name token, account_name from, uint64_t amount) {
             action(
                 permission_level{ from, N(active) },
                 token, N(transfer),
-                std::make_tuple(from, _self, Bondage::toAsset(amount), std::string("Zap dots bought."))
+                std::make_tuple(from, _self, Bondage::toAsset(amount), std::string("Zap dots bonded."))
+            ).send();
+        }
+
+        void withdraw_tokens(account_name token, account_name to, uint64_t amount) {
+            action(
+                permission_level{ _self, N(active) },
+                token, N(transfer),
+                std::make_tuple(_self, to, Bondage::toAsset(amount), std::string("Zap dots unbonded."))
             ).send();
         }
 };

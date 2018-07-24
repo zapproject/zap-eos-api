@@ -21,6 +21,7 @@ init_accs:
 
 grant_permissions:
 	cleos set account permission $(TEST_ACC) active '{"threshold": 1,"keys": [{"key": "EOS7jEmggyJqyKitbsaTYELQCRN71jAhmhwX1Zv89NFZLzaKfrX7X","weight": 1}],"accounts": [{"permission":{"actor":"zap.bondage","permission":"eosio.code"},"weight":1}]}' owner -p $(TEST_ACC)
+	cleos set account permission $(BONDAGE_ACC) active '{"threshold": 1,"keys": [{"key": "EOS7jEmggyJqyKitbsaTYELQCRN71jAhmhwX1Zv89NFZLzaKfrX7X","weight": 1}],"accounts": [{"permission":{"actor":"zap.bondage","permission":"eosio.code"},"weight":1}]}' owner -p $(BONDAGE_ACC)
 
 issue_tokens_for_testacc: 
 	cleos push action $(TOKEN_ACC) issue '["kostya.s", "1000000 TST", ""]' -p $(TOKEN_ACC)
