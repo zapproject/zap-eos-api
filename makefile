@@ -30,10 +30,12 @@ init_provider:
 	cleos push action $(REGISTRY_ACC) addendpoint '["provider", "tst01_endpoint01", [200, 3, 0], [0, 1000000], [1]]' -p $(TEST_PROVIDER_ACC)
 
 bond:
+	-cleos wallet lock -n default --password $(WALLET_PWD)
 	-cleos wallet unlock -n test --password $(TEST_WALLET_PWD)
 	cleos push action $(BONDAGE_ACC) bond '["kostya.s", "provider", "tst01_endpoint01", 1]' -p $(TEST_ACC)
 
 unbond:
+	-cleos wallet lock -n default --password $(WALLET_PWD)
 	-cleos wallet unlock -n test --password $(TEST_WALLET_PWD)
 	cleos push action $(BONDAGE_ACC) unbond '["kostya.s", "provider", "tst01_endpoint01", 1]' -p $(TEST_ACC)
 

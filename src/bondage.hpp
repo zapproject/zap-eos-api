@@ -51,6 +51,9 @@ class Bondage: public eosio::contract {
         //View total issued dots for specified endpoint
         void viewi(account_name provider, std::string endpoint);
 
+        //handle actions
+        void apply(account_name contract, account_name act);
+
     private:
         const std::string ZAP_TOKEN_SYMBOL = "TST";
         const uint8_t ZAP_TOKEN_DECIMALS = 0;

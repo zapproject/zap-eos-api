@@ -1,6 +1,20 @@
 #include <bondage.hpp>
 #include <eosiolib/action.hpp>
 
+extern "C" {
+    [[noreturn]] void apply( uint64_t receiver, uint64_t code, uint64_t action ) {
+        Bondage  bondage(receiver);
+        bondage.apply(code, action);
+        eosio_exit(0);
+    }
+}
+
+void Bondage::apply(account_name contract, account_name act) {
+    switch(act) {
+        case N(bond): Bondage.bond(); break;
+    }
+}
+
 void Bondage::bond(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots) {
     require_auth(subscriber);
 
