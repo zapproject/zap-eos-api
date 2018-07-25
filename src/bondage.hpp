@@ -12,18 +12,29 @@ class Bondage: public eosio::contract {
         // MAIN METHODS
 
         //@abi action
+        //Buy dots for specified endpoint
         void bond(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots);
 
         //@abi action
+        //Withdraw dots for specified provider
         void unbond(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots);
 
         //@abi action
+        //Estimate price of dots (in integral zap tokens) for specified provider 
         void estimate(account_name provider, std::string endpoint, uint64_t dots);
 
         //@abi action
+        //Escrow dots to specified endpoint
+        //Can be called only by dispatch provider
+        //User can not withdraw dots from escrow
         void escrow(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots);
 
         //@abi action
+        //Convert escrowed dots of subscriber to zap tokens and send tokens to provider
+        //Escrow dots will be removed
+        //Provider will receive zap tokens for escrowed dots
+        //Dots will be removed from total issued of endpoint
+        //Dots will be removed from subscriber holder
         void release(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots);
         
         // VIEW METHODS
@@ -43,15 +54,20 @@ class Bondage: public eosio::contract {
     private:
         const std::string ZAP_TOKEN_SYMBOL = "TST";
         const uint8_t ZAP_TOKEN_DECIMALS = 0;
+        
+        //TODO: Must be changed for deploying on main net
+        //or create function to be able to change this variables
         account_name zap_token = N(zap.token);
         account_name zap_registry = N(zap.registry);
         account_name zap_dispatch = N(zap.dispatch);
         account_name zap_arbiter = N(zap.arbiter);
 
+        //Convert specified amount of tokens to <asset> structure
         eosio::asset toAsset(uint64_t tokensAmount) {
             return asset(tokensAmount, symbol_type(string_to_symbol(ZAP_TOKEN_DECIMALS, ZAP_TOKEN_SYMBOL.c_str())));
         }
 
+        //Calc price of dots for bonding 
         uint64_t get_dots_price(account_name provider, std::string endpoint, uint64_t total_issued, uint64_t dots_to_buy) {
             uint64_t price = 0;
             for (uint64_t i = 0; i < dots_to_buy; i++) {
@@ -62,6 +78,7 @@ class Bondage: public eosio::contract {
             return price;
         }
 
+        //Calc price of dots for withdrawing
         uint64_t get_withdraw_price(account_name provider, std::string endpoint, uint64_t total_issued, uint64_t dots_to_withdraw) {
             uint64_t price = 0;
             for (uint64_t i = 0; i < dots_to_withdraw; i++) {
@@ -72,6 +89,7 @@ class Bondage: public eosio::contract {
             return price;
         }
 
+        //Calculate price of specified dot number for specified endpoint
         uint64_t calc_dot_price(account_name provider, std::string endpoint_specifier, uint64_t dot) {
             db::endpoint endpoint = get_endpoint(provider, endpoint_specifier);
             for (uint64_t i = 0; i < endpoint.dividers.size(); i++) {
@@ -109,6 +127,7 @@ class Bondage: public eosio::contract {
             return log2;
         }
 
+        //Get endpoint object from registry contract
         db::endpoint get_endpoint(account_name provider, std::string endpoint_specifier) {
             db::endpointIndex endpoints(Bondage::zap_registry, provider);
 
@@ -119,6 +138,7 @@ class Bondage: public eosio::contract {
             return item;
         }
 
+        //Send inline action for transfering tokens from subscriber to _self account
         void take_tokens(account_name from, uint64_t amount) {
             action(
                 permission_level{ from, N(active) },
@@ -127,6 +147,7 @@ class Bondage: public eosio::contract {
             ).send();
         }
 
+        //Send inline action for transfering tokens from _self to specified account
         void withdraw_tokens(account_name to, uint64_t amount) {
             action(
                 permission_level{ _self, N(active) },

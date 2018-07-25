@@ -48,6 +48,7 @@ namespace db {
     }
 
     //@abi table endpoint i64
+    //Table for provider endpoints, created in context of specified provider
     struct endpoint {
         uint64_t id;
         account_name provider;
@@ -68,6 +69,7 @@ namespace db {
     };
 
     //@abi table provider i64
+    //Table for providers, created in context of zap registry contract
     struct provider {
         account_name user;
         std::string title;
@@ -79,6 +81,7 @@ namespace db {
     };
 
     //@abi table holder i64
+    //Table for user holders, created in context of user
     struct holder {
         account_name provider;
         std::string endpoint;
@@ -92,6 +95,7 @@ namespace db {
     };     
 
     //@abi table issued i64
+    //Table to store total issued dots for endpoint, created in context of provider, pk is same as pk in endpoints
     struct issued {
         uint64_t endpointid;
         uint64_t dots;
