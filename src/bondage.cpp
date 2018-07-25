@@ -1,18 +1,36 @@
 #include <bondage.hpp>
 #include <eosiolib/action.hpp>
 
+// Handle 'cleos push action' command
 extern "C" {
     [[noreturn]] void apply( uint64_t receiver, uint64_t code, uint64_t action ) {
-        Bondage  bondage(receiver);
-        bondage.apply(code, action);
+        Bondage bondage(receiver);
+        bondage.handle(code, action);
         eosio_exit(0);
     }
 }
 
-void Bondage::apply(account_name contract, account_name act) {
-    switch(act) {
-        case N(bond): Bondage.bond(); break;
+//Using custom handler to be able handle require_recepient() notification from token
+//https://eosio.stackexchange.com/questions/128/what-is-the-purpose-of-require-recipient
+//examples of usage can be found in Exchange contract sources
+void Bondage::handle(account_name contract, account_name act) {
+    //Token transfer event received
+    if (act == N(transfer)) {
+        Bondage::handle_transfer(unpack_action_data<currency::transfer>(), contract);
+        return;
     }
+
+    if (contract != _self) return;
+
+    auto& thiscontract = *this;
+    switch (act) {
+        EOSIO_API(Bondage, (bond)(unbond)(estimate)(escrow)(release)(viewhe)(viewh)(viewi) )
+    }
+}
+
+void Bondage::handle_transfer(const currency::transfer& t, account_name code) {
+    print("Handlng trasfer event.\n");
+    print_f("");
 }
 
 void Bondage::bond(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots) {

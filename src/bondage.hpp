@@ -2,6 +2,7 @@
 
 #include <database.hpp>
 #include <math.h>
+#include <eosiolib/currency.hpp>
 
 using namespace eosio;
 
@@ -52,7 +53,9 @@ class Bondage: public eosio::contract {
         void viewi(account_name provider, std::string endpoint);
 
         //handle actions
-        void apply(account_name contract, account_name act);
+        void handle(account_name contract, account_name act);
+
+        void handle_transfer(const currency::transfer& t, account_name code);
 
     private:
         const std::string ZAP_TOKEN_SYMBOL = "TST";
@@ -160,4 +163,4 @@ class Bondage: public eosio::contract {
         }
 };
 
-EOSIO_ABI(Bondage, (bond)(unbond)(estimate)(escrow)(release)(viewhe)(viewh)(viewi))
+//EOSIO_ABI(Bondage, (bond)(unbond)(estimate)(escrow)(release)(viewhe)(viewh)(viewi))
