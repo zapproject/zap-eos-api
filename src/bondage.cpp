@@ -1,31 +1,24 @@
 #include <bondage.hpp>
 #include <eosiolib/action.hpp>
 
-void Bondage::init(account_name registry) {
-    require_auth(_self);
-    Bondage::zap_registry = registry;
-    Bondage::zap_dispatch = dispatch;
-}
-
-void Bondage::bond(account_name token, account_name subscriber, account_name provider, std::string endpoint, uint64_t dots) {
+void Bondage::bond(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots) {
     require_auth(subscriber);
 
     db::holderIndex holders(_self, subscriber);
     db::endpointIndex endpoints(Bondage::zap_registry, provider);
     db::issuedIndex issued(_self, provider);
 
-    auto hidx = holders.get_index<N(byhash)>();
     key256 hash = key256(db::hash(provider, endpoint));
+    auto hidx = holders.get_index<N(byhash)>();
     auto holders_iterator = hidx.find(hash);
 
     auto eidx = endpoints.get_index<N(byhash)>();
-    key256 hash = key256(db::hash(provider, endpoint));
     auto endpoints_iterator = eidx.find(hash);
     
     // Check that endpoint exists
     eosio_assert(endpoints_iterator != eidx.end(), "Endpoint doesn't exists.");
     auto endpoint_item = endpoints.get(endpoints_iterator->id);
-    print_f("Bond: enndpoint item found, id = %.", endpoint_item.id);
+    print_f("Bond: enndpoint item found, id = %.\n", endpoint_item.id);
 
     // Update total issued dots for current endpoint
     uint64_t endpoint_id = endpoint_item.id;
@@ -49,12 +42,12 @@ void Bondage::bond(account_name token, account_name subscriber, account_name pro
     uint64_t price = Bondage::get_dots_price(provider, endpoint, total_issued_dots, dots);
 
     // Transfer subscriber tokens to zap.bondage address
-    Bondage::take_tokens(token, subscriber, price);
+    Bondage::take_tokens(subscriber, price);
     print_f("Bond: transfer tokens action have sent, price is %.\n", price);
 
     // Update subsciber dots balance for current endpoint
     if (holders_iterator != hidx.end()) {
-        holders.modify(holders_iterator, subscriber, [&](auto& h) {
+        hidx.modify(holders_iterator, subscriber, [&](auto& h) {
             h.dots = h.dots + dots;
         });
         print_f("Bond: dots updated, added value = %.\n", dots);
@@ -69,7 +62,7 @@ void Bondage::bond(account_name token, account_name subscriber, account_name pro
     }
 }
 
-void Bondage::unbond(account_name token, account_name subscriber, account_name provider, std::string endpoint, uint64_t dots) {
+void Bondage::unbond(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots) {
     require_auth(subscriber);
 
     db::holderIndex holders(_self, subscriber);
@@ -77,16 +70,16 @@ void Bondage::unbond(account_name token, account_name subscriber, account_name p
     db::issuedIndex issued(_self, provider);
 
     key256 hash = key256(db::hash(provider, endpoint));
-    auto hidx = holders.get_index<N(byhash)>();
-    auto holders_iterator = hidx.find(hash);
+    auto h_idx = holders.get_index<N(byhash)>();
+    auto holders_iterator = h_idx.find(hash);
 
-    auto eidx = endpoints.get_index<N(byhash)>();
-    auto endpoints_iterator = eidx.find(hash);
+    auto e_idx = endpoints.get_index<N(byhash)>();
+    auto endpoints_iterator = e_idx.find(hash);
     
     
     // Check that subscriber can unbond dots
-    eosio_assert(endpoints_iterator != eidx.end(), "Endpoint doesn't exists.");
-    eosio_assert(holders_iterator != holders.end(), "Holder doesn't exists.");
+    eosio_assert(endpoints_iterator != e_idx.end(), "Endpoint doesn't exists.");
+    eosio_assert(holders_iterator != h_idx.end(), "Holder doesn't exists.");
 
     auto issued_iterator = issued.find(endpoints_iterator->id);
     eosio_assert(issued_iterator != issued.end(), "Holder doesn't exists.");
@@ -102,7 +95,7 @@ void Bondage::unbond(account_name token, account_name subscriber, account_name p
     print_f("Bond: issued updated, substructed value = %.\n", dots);
     
     // Update subsciber dots balance for current endpoint
-    holders.modify(holders_iterator, subscriber, [&](auto& h) {
+    h_idx.modify(holders_iterator, subscriber, [&](auto& h) {
         h.dots = h.dots - dots;
     });
     print_f("Bond: dots updated, added value = %.\n", dots);
@@ -112,7 +105,7 @@ void Bondage::unbond(account_name token, account_name subscriber, account_name p
     uint64_t price = Bondage::get_withdraw_price(provider, endpoint, total_issued_dots, dots);
 
     // Transfer subscriber tokens to zap.bondage address
-    Bondage::withdraw_tokens(token, subscriber, price);
+    Bondage::withdraw_tokens(subscriber, price);
     print_f("Bond: transfer tokens action have sent, price is %.\n", price);
 }
 
@@ -120,8 +113,8 @@ void Bondage::estimate(account_name provider, std::string endpoint, uint64_t dot
     db::endpointIndex endpoints(Bondage::zap_registry, provider);
     db::issuedIndex issued(_self, provider);
 
-    auto idx = endpoints.get_index<N(byhash)>();
     key256 hash = key256(db::hash(provider, endpoint));
+    auto idx = endpoints.get_index<N(byhash)>();
     auto endpoints_iterator = idx.find(hash);
 
     if (endpoints_iterator == idx.end()) {
@@ -138,7 +131,7 @@ void Bondage::estimate(account_name provider, std::string endpoint, uint64_t dot
     }
     
     uint64_t price = Bondage::get_dots_price(provider, endpoint, total_issued_dots, dots);
-    print_f("Estimated price for provider = '%' and endpoint = '%' is % ZAP.", name{provider}, endpoint, price);
+    print_f("Estimated price for provider = '%' and endpoint = '%' is % ZAP.\n", name{provider}, endpoint, price);
 }
 
 void Bondage::escrow(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots) {
@@ -146,37 +139,57 @@ void Bondage::escrow(account_name subscriber, account_name provider, std::string
 
     db::holderIndex holders(_self, subscriber);
 
-    auto idx = holders.get_index<N(byhash)>();
     key256 hash = key256(db::hash(provider, endpoint));
+    auto idx = holders.get_index<N(byhash)>();
     auto holders_iterator = idx.find(hash);
 
     eosio_assert(holders_iterator != idx.end(), "Holder not found.");
     eosio_assert(holders_iterator->dots >= dots, "Not enough dots.");
  
-    holders.modify(holders_iterator, subscriber, [&] (auto& h) {
+    // Remove specified amount of dots and add them to subscriber escrow
+    idx.modify(holders_iterator, subscriber, [&] (auto& h) {
         h.dots = h.dots - dots;
         h.escrow = h.escrow + dots;
     });   
-    print_f("Escrow updated, escrow dots added = %.", dots);
+    print_f("Escrow updated, escrow dots added = %.\n", dots);
 }
 
 void Bondage::release(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots) {
-    require_auth(subscriber);
+    require_auth(Bondage::zap_dispatch);
 
-    db::holderIndex holders(_self, subscriber);
+    db::holderIndex subscriber_holders(_self, subscriber);
+    db::endpointIndex endpoints(Bondage::zap_registry, provider);
+    db::issuedIndex issued(_self, provider);
 
-    auto idx = holders.get_index<N(byhash)>();
     key256 hash = key256(db::hash(provider, endpoint));
-    auto holders_iterator = idx.find(hash);
+    auto e_idx = endpoints.get_index<N(byhash)>();
+    auto endpoints_iterator = e_idx.find(hash);
+    auto issued_iterator = issued.find(endpoints_iterator->id);
 
-    eosio_assert(holders_iterator != idx.end(), "Holder not found.");
-    eosio_assert(holders_iterator->escrow >= dots, "Not enough escrow dots.");
+    auto s_idx = subscriber_holders.get_index<N(byhash)>();
+    auto subscriber_iterator = s_idx.find(hash);
+
+    // Check that subscriber have bonded dots and his escrow dots are bigger or equal to dots for release
+    eosio_assert(issued_iterator != issued.end(), "Issued dots not found.");
+    eosio_assert(subscriber_iterator != s_idx.end(), "Holder not found.");
+    eosio_assert(subscriber_iterator->escrow >= dots, "Not enough escrow dots.");
  
-    holders.modify(holders_iterator, subscriber, [&] (auto& h) {
-        h.dots = h.dots + dots;
+    // Remove specified amount of dots from subscriber escrow
+    s_idx.modify(subscriber_iterator, subscriber, [&] (auto& h) {
         h.escrow = h.escrow - dots;
     });   
-    print_f("Escrow updated, escrow dots removed = %.", dots);
+
+    issued.modify(issued_iterator, subscriber, [&](auto& i) {
+        i.dots = i.dots - dots;
+    });
+    print_f("Bond: issued updated, substructed value = %.\n", dots);
+
+    // Calculate amount of zap tokens that provider will receive
+    uint64_t price = Bondage::get_withdraw_price(provider, endpoint, issued_iterator->dots, dots);
+
+    // Send tokens to provider
+    Bondage::withdraw_tokens(provider, price);
+    print_f("Escrow updated, escrow dots removed = %, zap tokens transfered = %.\n", dots, price);
 }
 
 void Bondage::viewhe(account_name holder, account_name provider, std::string endpoint) {
@@ -187,7 +200,7 @@ void Bondage::viewhe(account_name holder, account_name provider, std::string end
     auto hashItr = idx.find(hash);
     auto item = holders.get(hashItr->provider);
 
-    print_f("Holder %: provider = %; endpoint = %; dots = %; escrow = %.", name{holder}, name{item.provider}, item.endpoint, item.dots, item.escrow);
+    print_f("Holder %: provider = %; endpoint = %; dots = %; escrow = %.\n", name{holder}, name{item.provider}, item.endpoint, item.dots, item.escrow);
 }
 
 void Bondage::viewh(account_name holder) {
@@ -196,19 +209,25 @@ void Bondage::viewh(account_name holder) {
      auto iterator = holders.begin();
      uint64_t counter = 0;
      while (iterator != holders.end()) {
-         print_f("#% - provider = %; endpoint = %; dots = %; escrow = %.", counter, name{iterator->provider}, iterator->endpoint, iterator->dots, iterator->escrow);
+         print_f("#% - provider = %; endpoint = %; dots = %; escrow = %.\n", counter, name{iterator->provider}, iterator->endpoint, iterator->dots, iterator->escrow);
          counter++;
          iterator++;
      }
 }
 
-void Bondage::registry() {
-    require_auth(_self);
-    print_f("Registry acc name = %.", name{Bondage::zap_registry});
+void Bondage::viewi(account_name provider, std::string endpoint) {
+    db::endpointIndex endpoints(Bondage::zap_registry, provider);
+    db::issuedIndex issued(_self, provider);
+
+    key256 hash = key256(db::hash(provider, endpoint));
+    auto e_idx = endpoints.get_index<N(byhash)>();
+    auto endpoints_iterator = e_idx.find(hash);
+    auto issued_iterator = issued.find(endpoints_iterator->id);
+
+    eosio_assert(issued_iterator != issued.end(), "Issued dots not found.");
+
+     print_f("Total dots for %/% = %.\n", name{provider}, endpoint, issued_iterator->dots);
 }
-
-
-
 
 
 

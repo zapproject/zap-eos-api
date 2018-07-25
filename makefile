@@ -2,6 +2,8 @@ WALLET_PWD = PW5KG8hve1T9HyfWUJJC5E5Q2vNSXEeQiLs6WpphFbwf2EAuAXPYW
 PUBLIC_KEY = EOS7jEmggyJqyKitbsaTYELQCRN71jAhmhwX1Zv89NFZLzaKfrX7X
 REGISTRY_ACC = zap.registry
 BONDAGE_ACC = zap.bondage
+DISPATCH_ACC = zap.dispatch
+TEST_PROVIDER_ACC = provider
 TEST_ACC = kostya.s
 TOKEN_ACC = zap.token
 PROJECT_DIR = /home/kostya/blockchain/zap_eos_contracts
@@ -9,24 +11,38 @@ EOS_DIR = /home/kostya/blockchain/eos
 TOKEN_DIR = $(EOS_DIR)/build/contracts/eosio.token
 
 init_provider:
-	cleos push action $(REGISTRY_ACC) newprovider '["kostya.s", "tst01", 1]' -p $(TEST_ACC)
-	cleos push action $(REGISTRY_ACC) addendpoint '["kostya.s", "tst01_endpoint01", [200, 3, 0], [0, 1000000], [1]]' -p $(TEST_ACC)
-	
+	-cleos wallet unlock --password $(WALLET_PWD)
+	cleos push action $(REGISTRY_ACC) newprovider '["provider", "tst01", 1]' -p $(TEST_PROVIDER_ACC)
+	cleos push action $(REGISTRY_ACC) addendpoint '["provider", "tst01_endpoint01", [200, 3, 0], [0, 1000000], [1]]' -p $(TEST_PROVIDER_ACC)
+
+bond:
+	-cleos wallet unlock --password $(WALLET_PWD)
+	cleos push action $(BONDAGE_ACC) bond '["kostya.s", "provider", "tst01_endpoint01", 1]' -p $(TEST_ACC)
+
+unbond:
+	-cleos wallet unlock --password $(WALLET_PWD)
+	cleos push action $(BONDAGE_ACC) unbond '["kostya.s", "provider", "tst01_endpoint01", 1]' -p $(TEST_ACC)
+
 init_accs:
 	-cleos wallet unlock --password $(WALLET_PWD)
 	cleos create account eosio $(REGISTRY_ACC) $(PUBLIC_KEY)
 	cleos create account eosio $(BONDAGE_ACC) $(PUBLIC_KEY)
 	cleos create account eosio $(TEST_ACC) $(PUBLIC_KEY)
 	cleos create account eosio $(TOKEN_ACC) $(PUBLIC_KEY)
+	cleos create account eosio $(DISPATCH_ACC) $(PUBLIC_KEY)
+	cleos create account eosio $(TEST_PROVIDER_ACC) $(PUBLIC_KEY)
 
 grant_permissions:
+	-cleos wallet unlock --password $(WALLET_PWD)
 	cleos set account permission $(TEST_ACC) active '{"threshold": 1,"keys": [{"key": "EOS7jEmggyJqyKitbsaTYELQCRN71jAhmhwX1Zv89NFZLzaKfrX7X","weight": 1}],"accounts": [{"permission":{"actor":"zap.bondage","permission":"eosio.code"},"weight":1}]}' owner -p $(TEST_ACC)
 	cleos set account permission $(BONDAGE_ACC) active '{"threshold": 1,"keys": [{"key": "EOS7jEmggyJqyKitbsaTYELQCRN71jAhmhwX1Zv89NFZLzaKfrX7X","weight": 1}],"accounts": [{"permission":{"actor":"zap.bondage","permission":"eosio.code"},"weight":1}]}' owner -p $(BONDAGE_ACC)
 
 issue_tokens_for_testacc: 
+	-cleos wallet unlock --password $(WALLET_PWD)
 	cleos push action $(TOKEN_ACC) issue '["kostya.s", "1000000 TST", ""]' -p $(TOKEN_ACC)
 
 testacc_balance:
+	-cleos wallet unlock --password $(WALLET_PWD)
 	cleos get currency balance $(TOKEN_ACC) $(TEST_ACC) "TST"
 	
 build_all:
@@ -55,6 +71,8 @@ deploy_all:
 	-cleos wallet unlock --password $(WALLET_PWD)
 	-cleos set contract $(REGISTRY_ACC) $(PROJECT_DIR)/build/registry -p $(REGISTRY_ACC)
 	-cleos set contract $(BONDAGE_ACC) $(PROJECT_DIR)/build/bondage -p $(BONDAGE_ACC)
+	-cleos set contract $(TOKEN_ACC) $(TOKEN_DIR) -p $(TOKEN_ACC)
+	-cleos push action $(TOKEN_ACC) create '["zap.token", "1000000000 TST"]' -p $(TOKEN_ACC)
 
 deploy_token:
 	-cleos wallet unlock --password $(WALLET_PWD)

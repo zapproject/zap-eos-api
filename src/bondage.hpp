@@ -12,10 +12,10 @@ class Bondage: public eosio::contract {
         // MAIN METHODS
 
         //@abi action
-        void bond(account_name token, account_name subscriber, account_name provider, std::string endpoint, uint64_t dots);
+        void bond(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots);
 
         //@abi action
-        void unbond(account_name token, account_name subscriber, account_name provider, std::string endpoint, uint64_t dots);
+        void unbond(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots);
 
         //@abi action
         void estimate(account_name provider, std::string endpoint, uint64_t dots);
@@ -25,10 +25,6 @@ class Bondage: public eosio::contract {
 
         //@abi action
         void release(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots);
-
-        //@abi action
-        void init(account_name registry, account_name dispatch);
-
         
         // VIEW METHODS
 
@@ -41,15 +37,19 @@ class Bondage: public eosio::contract {
         void viewh(account_name holder);
         
         //@abi action
-        void registry();
+        //View total issued dots for specified endpoint
+        void viewi(account_name provider, std::string endpoint);
 
     private:
         const std::string ZAP_TOKEN_SYMBOL = "TST";
+        const uint8_t ZAP_TOKEN_DECIMALS = 0;
+        account_name zap_token = N(zap.token);
         account_name zap_registry = N(zap.registry);
         account_name zap_dispatch = N(zap.dispatch);
+        account_name zap_arbiter = N(zap.arbiter);
 
         eosio::asset toAsset(uint64_t tokensAmount) {
-            return asset(tokensAmount, symbol_type(string_to_symbol(0, "TST")));
+            return asset(tokensAmount, symbol_type(string_to_symbol(ZAP_TOKEN_DECIMALS, ZAP_TOKEN_SYMBOL.c_str())));
         }
 
         uint64_t get_dots_price(account_name provider, std::string endpoint, uint64_t total_issued, uint64_t dots_to_buy) {
@@ -119,21 +119,21 @@ class Bondage: public eosio::contract {
             return item;
         }
 
-        void take_tokens(account_name token, account_name from, uint64_t amount) {
+        void take_tokens(account_name from, uint64_t amount) {
             action(
                 permission_level{ from, N(active) },
-                token, N(transfer),
+                zap_token, N(transfer),
                 std::make_tuple(from, _self, Bondage::toAsset(amount), std::string("Zap dots bonded."))
             ).send();
         }
 
-        void withdraw_tokens(account_name token, account_name to, uint64_t amount) {
+        void withdraw_tokens(account_name to, uint64_t amount) {
             action(
                 permission_level{ _self, N(active) },
-                token, N(transfer),
+                zap_token, N(transfer),
                 std::make_tuple(_self, to, Bondage::toAsset(amount), std::string("Zap dots unbonded."))
             ).send();
         }
 };
 
-EOSIO_ABI(Bondage, (bond)(unbond)(estimate)(viewhe)(viewh)(init)(registry))
+EOSIO_ABI(Bondage, (bond)(unbond)(estimate)(escrow)(release)(viewhe)(viewh)(viewi))
