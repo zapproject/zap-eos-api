@@ -13,25 +13,20 @@ class Bondage {
  
         // MAIN METHODS
 
-        //@abi action
         //Buy dots for specified endpoint
         void bond(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots);
 
-        //@abi action
         //Withdraw dots for specified provider
         void unbond(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots);
 
-        //@abi action
         //Estimate price of dots (in integral zap tokens) for specified provider 
         void estimate(account_name provider, std::string endpoint, uint64_t dots);
 
-        //@abi action
         //Escrow dots to specified endpoint
         //Can be called only by dispatch provider
         //User can not withdraw dots from escrow
         void escrow(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots);
 
-        //@abi action
         //Convert escrowed dots of subscriber to zap tokens and send tokens to provider
         //Escrow dots will be removed
         //Provider will receive zap tokens for escrowed dots
@@ -41,15 +36,12 @@ class Bondage {
         
         // VIEW METHODS
 
-        //@abi action
         //View specified endpoint dots for specified holder
         void viewhe(account_name holder, account_name provider, std::string endpoint);
 
-        //@abi action
         //View all endpoints for specified holder
         void viewh(account_name holder);
         
-        //@abi action
         //View total issued dots for specified endpoint
         void viewi(account_name provider, std::string endpoint);
 
@@ -58,6 +50,9 @@ class Bondage {
         const uint8_t ZAP_TOKEN_DECIMALS = 0;
 
         account_name _self;
+        
+        //TODO: must be changed to prod account
+        account_name zap_token = N(zap.token);
 
         //Convert specified amount of tokens to <asset> structure
         eosio::asset toAsset(uint64_t tokensAmount) {
@@ -87,7 +82,7 @@ class Bondage {
         }
 
         //Calculate price of specified dot number for specified endpoint
-        uint64_t calc_dot_price(account_name _self, account_name provider, std::string endpoint_specifier, uint64_t dot) {
+        uint64_t calc_dot_price(account_name provider, std::string endpoint_specifier, uint64_t dot) {
             db::endpoint endpoint = get_endpoint(provider, endpoint_specifier);
             for (uint64_t i = 0; i < endpoint.dividers.size(); i++) {
                 uint64_t start = endpoint.parts[2 * i];

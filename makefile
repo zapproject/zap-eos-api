@@ -59,7 +59,7 @@ testacc_balance:
 	-cleos wallet unlock -n default --password $(WALLET_PWD)
 	cleos get currency balance $(TOKEN_ACC) $(TEST_ACC) "TST"
 	
-build:
+build_all:
 	-mkdir $(PROJECT_DIR)/build
 	-mkdir $(PROJECT_DIR)/build/main
 	eosiocpp -o $(PROJECT_DIR)/build/main/main.wast $(PROJECT_DIR)/src/main.cpp

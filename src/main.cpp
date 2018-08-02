@@ -1,5 +1,3 @@
-#pragma once
-
 #include <main.hpp>
 
 
@@ -8,7 +6,7 @@ void Main::newprovider(account_name provider, std::string title, uint64_t public
 }
 
 void Main::addendpoint(account_name provider, std::string specifier, std::vector<int64_t> constants, std::vector<uint64_t> parts, std::vector<uint64_t> dividers) {
-    Main::registry.newprovider(provider, specifier, constants, parts, dividers);
+    Main::registry.addendpoint(provider, specifier, constants, parts, dividers);
 }
 
 void Main::bond(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots) {
@@ -40,7 +38,7 @@ void Main::viewes(account_name provider, uint64_t from, uint64_t to) {
 }
 
 void Main::endpbyhash(account_name provider, std::string specifier) {
-    Main::registry.endpbyhash(provider, specifier)
+    Main::registry.endpbyhash(provider, specifier);
 }
 
 void Main::viewhe(account_name holder, account_name provider, std::string endpoint) {

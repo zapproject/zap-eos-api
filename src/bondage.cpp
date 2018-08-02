@@ -42,7 +42,7 @@ void Bondage::bond(account_name subscriber, account_name provider, std::string e
     uint64_t price = Bondage::get_dots_price(provider, endpoint, total_issued_dots, dots);
 
     // Transfer subscriber tokens to zap.bondage address
-    Bondage::take_tokens(subscriber, price);
+    Bondage::transfer_tokens(subscriber, _self, price, "bond");
     print_f("Bond: transfer tokens action have sent, price is %.\n", price);
 
     // Update subsciber dots balance for current endpoint
@@ -105,7 +105,7 @@ void Bondage::unbond(account_name subscriber, account_name provider, std::string
     uint64_t price = Bondage::get_withdraw_price(provider, endpoint, total_issued_dots, dots);
 
     // Transfer subscriber tokens to zap.bondage address
-    Bondage::withdraw_tokens(subscriber, price);
+    Bondage::transfer_tokens(_self, subscriber, price, "unbond");
     print_f("Bond: transfer tokens action have sent, price is %.\n", price);
 }
 
@@ -135,7 +135,7 @@ void Bondage::estimate(account_name provider, std::string endpoint, uint64_t dot
 }
 
 void Bondage::escrow(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots) {
-    require_auth(Bondage::zap_dispatch);
+    require_auth(_self);
 
     db::holderIndex holders(_self, subscriber);
 
@@ -155,7 +155,7 @@ void Bondage::escrow(account_name subscriber, account_name provider, std::string
 }
 
 void Bondage::release(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots) {
-    require_auth(Bondage::zap_dispatch);
+    require_auth(_self);
 
     db::holderIndex subscriber_holders(_self, subscriber);
     db::endpointIndex endpoints(_self, provider);
@@ -188,7 +188,7 @@ void Bondage::release(account_name subscriber, account_name provider, std::strin
     uint64_t price = Bondage::get_withdraw_price(provider, endpoint, issued_iterator->dots, dots);
 
     // Send tokens to provider
-    Bondage::withdraw_tokens(provider, price);
+    Bondage::transfer_tokens(_self, provider, price, "release");
     print_f("Escrow updated, escrow dots removed = %, zap tokens transfered = %.\n", dots, price);
 }
 

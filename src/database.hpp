@@ -1,3 +1,6 @@
+#ifndef DATABASE_HEADER
+#define DATABASE_HEADER
+
 #include <eosiolib/eosio.hpp>
 #include <eosiolib/crypto.h>
 #include <eosiolib/fixed_key.hpp>
@@ -115,3 +118,5 @@ namespace db {
             > holderIndex;
     typedef multi_index<N(issued), issued> issuedIndex;
 }
+
+#endif DATABASE_HEADER

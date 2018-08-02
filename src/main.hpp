@@ -9,7 +9,7 @@ class Main: public eosio::contract {
     public:
         using contract::contract;
 
-        Main(account_name n): eosio::contract(n), bondage(n), regsitry(n) { }
+        Main(account_name n): eosio::contract(n), bondage(n), registry(n) { }
 
         // REGISTRY METHODS
 
