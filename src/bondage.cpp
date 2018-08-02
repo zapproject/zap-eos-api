@@ -1,43 +1,11 @@
 #include <bondage.hpp>
 #include <eosiolib/action.hpp>
 
-// Handle 'cleos push action' command
-extern "C" {
-    [[noreturn]] void apply( uint64_t receiver, uint64_t code, uint64_t action ) {
-        Bondage bondage(receiver);
-        bondage.handle(code, action);
-        eosio_exit(0);
-    }
-}
-
-//Using custom handler to be able handle require_recepient() notification from token
-//https://eosio.stackexchange.com/questions/128/what-is-the-purpose-of-require-recipient
-//examples of usage can be found in Exchange contract sources
-void Bondage::handle(account_name contract, account_name act) {
-    //Token transfer event received
-    if (act == N(transfer)) {
-        Bondage::handle_transfer(unpack_action_data<currency::transfer>(), contract);
-        return;
-    }
-
-    if (contract != _self) return;
-
-    auto& thiscontract = *this;
-    switch (act) {
-        EOSIO_API(Bondage, (bond)(unbond)(estimate)(escrow)(release)(viewhe)(viewh)(viewi) )
-    }
-}
-
-void Bondage::handle_transfer(const currency::transfer& t, account_name code) {
-    print("Handlng trasfer event.\n");
-    print_f("");
-}
-
 void Bondage::bond(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots) {
     require_auth(subscriber);
 
     db::holderIndex holders(_self, subscriber);
-    db::endpointIndex endpoints(Bondage::zap_registry, provider);
+    db::endpointIndex endpoints(_self, provider);
     db::issuedIndex issued(_self, provider);
 
     key256 hash = key256(db::hash(provider, endpoint));
@@ -98,7 +66,7 @@ void Bondage::unbond(account_name subscriber, account_name provider, std::string
     require_auth(subscriber);
 
     db::holderIndex holders(_self, subscriber);
-    db::endpointIndex endpoints(Bondage::zap_registry, provider);
+    db::endpointIndex endpoints(_self, provider);
     db::issuedIndex issued(_self, provider);
 
     key256 hash = key256(db::hash(provider, endpoint));
@@ -142,7 +110,7 @@ void Bondage::unbond(account_name subscriber, account_name provider, std::string
 }
 
 void Bondage::estimate(account_name provider, std::string endpoint, uint64_t dots) {
-    db::endpointIndex endpoints(Bondage::zap_registry, provider);
+    db::endpointIndex endpoints(_self, provider);
     db::issuedIndex issued(_self, provider);
 
     key256 hash = key256(db::hash(provider, endpoint));
@@ -190,7 +158,7 @@ void Bondage::release(account_name subscriber, account_name provider, std::strin
     require_auth(Bondage::zap_dispatch);
 
     db::holderIndex subscriber_holders(_self, subscriber);
-    db::endpointIndex endpoints(Bondage::zap_registry, provider);
+    db::endpointIndex endpoints(_self, provider);
     db::issuedIndex issued(_self, provider);
 
     key256 hash = key256(db::hash(provider, endpoint));
@@ -248,7 +216,7 @@ void Bondage::viewh(account_name holder) {
 }
 
 void Bondage::viewi(account_name provider, std::string endpoint) {
-    db::endpointIndex endpoints(Bondage::zap_registry, provider);
+    db::endpointIndex endpoints(_self, provider);
     db::issuedIndex issued(_self, provider);
 
     key256 hash = key256(db::hash(provider, endpoint));

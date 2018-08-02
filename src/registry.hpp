@@ -4,9 +4,10 @@
 
 using namespace eosio;
 
-class Registry: public eosio::contract {
+class Registry {
     public:
-        using contract::contract;
+
+        Registry(account_name n): _self(n) { }
 
         // REGISTER METHODS
 
@@ -40,6 +41,8 @@ class Registry: public eosio::contract {
         void endpbyhash(account_name provider, std::string specifier);
 
     private:        
+        account_name _self;
+
 	std::string vector_to_string(std::vector<uint64_t> v) {
             std::string str = "[";
             
@@ -86,4 +89,4 @@ class Registry: public eosio::contract {
         }	    
 };
 
-EOSIO_ABI(Registry, (newprovider)(addendpoint)(viewps)(viewes)(endpbyhash))
+//EOSIO_ABI(Registry, (newprovider)(addendpoint)(viewps)(viewes)(endpbyhash))

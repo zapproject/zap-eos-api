@@ -6,10 +6,11 @@
 
 using namespace eosio;
 
-class Bondage: public eosio::contract {
+class Bondage {
     public:
-        using contract::contract;
-        
+
+        Bondage(account_name n): _self(n) { }
+ 
         // MAIN METHODS
 
         //@abi action
@@ -52,21 +53,11 @@ class Bondage: public eosio::contract {
         //View total issued dots for specified endpoint
         void viewi(account_name provider, std::string endpoint);
 
-        //handle actions
-        void handle(account_name contract, account_name act);
-
-        void handle_transfer(const currency::transfer& t, account_name code);
-
     private:
         const std::string ZAP_TOKEN_SYMBOL = "TST";
         const uint8_t ZAP_TOKEN_DECIMALS = 0;
-        
-        //TODO: Must be changed for deploying on main net
-        //or create function to be able to change this variables
-        account_name zap_token = N(zap.token);
-        account_name zap_registry = N(zap.registry);
-        account_name zap_dispatch = N(zap.dispatch);
-        account_name zap_arbiter = N(zap.arbiter);
+
+        account_name _self;
 
         //Convert specified amount of tokens to <asset> structure
         eosio::asset toAsset(uint64_t tokensAmount) {
@@ -96,7 +87,7 @@ class Bondage: public eosio::contract {
         }
 
         //Calculate price of specified dot number for specified endpoint
-        uint64_t calc_dot_price(account_name provider, std::string endpoint_specifier, uint64_t dot) {
+        uint64_t calc_dot_price(account_name _self, account_name provider, std::string endpoint_specifier, uint64_t dot) {
             db::endpoint endpoint = get_endpoint(provider, endpoint_specifier);
             for (uint64_t i = 0; i < endpoint.dividers.size(); i++) {
                 uint64_t start = endpoint.parts[2 * i];
@@ -135,7 +126,7 @@ class Bondage: public eosio::contract {
 
         //Get endpoint object from registry contract
         db::endpoint get_endpoint(account_name provider, std::string endpoint_specifier) {
-            db::endpointIndex endpoints(Bondage::zap_registry, provider);
+            db::endpointIndex endpoints(_self, provider);
 
             auto idx = endpoints.get_index<N(byhash)>();
             key256 hash = key256(db::hash(provider, endpoint_specifier));
@@ -144,21 +135,11 @@ class Bondage: public eosio::contract {
             return item;
         }
 
-        //Send inline action for transfering tokens from subscriber to _self account
-        void take_tokens(account_name from, uint64_t amount) {
+        void transfer_tokens(account_name from, account_name to, uint64_t amount, std::string memo) {
             action(
                 permission_level{ from, N(active) },
                 zap_token, N(transfer),
-                std::make_tuple(from, _self, Bondage::toAsset(amount), std::string("Zap dots bonded."))
-            ).send();
-        }
-
-        //Send inline action for transfering tokens from _self to specified account
-        void withdraw_tokens(account_name to, uint64_t amount) {
-            action(
-                permission_level{ _self, N(active) },
-                zap_token, N(transfer),
-                std::make_tuple(_self, to, Bondage::toAsset(amount), std::string("Zap dots unbonded."))
+                std::make_tuple(from, to, Bondage::toAsset(amount), memo)
             ).send();
         }
 };
