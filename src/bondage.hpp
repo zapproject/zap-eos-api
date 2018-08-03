@@ -2,34 +2,31 @@
 
 #include <database.hpp>
 #include <math.h>
+#include <eosiolib/currency.hpp>
 
 using namespace eosio;
 
-class Bondage: public eosio::contract {
+class Bondage {
     public:
-        using contract::contract;
-        
+
+        Bondage(account_name n): _self(n) { }
+ 
         // MAIN METHODS
 
-        //@abi action
         //Buy dots for specified endpoint
         void bond(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots);
 
-        //@abi action
         //Withdraw dots for specified provider
         void unbond(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots);
 
-        //@abi action
         //Estimate price of dots (in integral zap tokens) for specified provider 
         void estimate(account_name provider, std::string endpoint, uint64_t dots);
 
-        //@abi action
         //Escrow dots to specified endpoint
         //Can be called only by dispatch provider
         //User can not withdraw dots from escrow
         void escrow(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots);
 
-        //@abi action
         //Convert escrowed dots of subscriber to zap tokens and send tokens to provider
         //Escrow dots will be removed
         //Provider will receive zap tokens for escrowed dots
@@ -39,28 +36,23 @@ class Bondage: public eosio::contract {
         
         // VIEW METHODS
 
-        //@abi action
         //View specified endpoint dots for specified holder
         void viewhe(account_name holder, account_name provider, std::string endpoint);
 
-        //@abi action
         //View all endpoints for specified holder
         void viewh(account_name holder);
         
-        //@abi action
         //View total issued dots for specified endpoint
         void viewi(account_name provider, std::string endpoint);
 
     private:
         const std::string ZAP_TOKEN_SYMBOL = "TST";
         const uint8_t ZAP_TOKEN_DECIMALS = 0;
+
+        account_name _self;
         
-        //TODO: Must be changed for deploying on main net
-        //or create function to be able to change this variables
+        //TODO: must be changed to prod account
         account_name zap_token = N(zap.token);
-        account_name zap_registry = N(zap.registry);
-        account_name zap_dispatch = N(zap.dispatch);
-        account_name zap_arbiter = N(zap.arbiter);
 
         //Convert specified amount of tokens to <asset> structure
         eosio::asset toAsset(uint64_t tokensAmount) {
@@ -129,7 +121,7 @@ class Bondage: public eosio::contract {
 
         //Get endpoint object from registry contract
         db::endpoint get_endpoint(account_name provider, std::string endpoint_specifier) {
-            db::endpointIndex endpoints(Bondage::zap_registry, provider);
+            db::endpointIndex endpoints(_self, provider);
 
             auto idx = endpoints.get_index<N(byhash)>();
             key256 hash = key256(db::hash(provider, endpoint_specifier));
@@ -138,23 +130,13 @@ class Bondage: public eosio::contract {
             return item;
         }
 
-        //Send inline action for transfering tokens from subscriber to _self account
-        void take_tokens(account_name from, uint64_t amount) {
+        void transfer_tokens(account_name from, account_name to, uint64_t amount, std::string memo) {
             action(
                 permission_level{ from, N(active) },
                 zap_token, N(transfer),
-                std::make_tuple(from, _self, Bondage::toAsset(amount), std::string("Zap dots bonded."))
-            ).send();
-        }
-
-        //Send inline action for transfering tokens from _self to specified account
-        void withdraw_tokens(account_name to, uint64_t amount) {
-            action(
-                permission_level{ _self, N(active) },
-                zap_token, N(transfer),
-                std::make_tuple(_self, to, Bondage::toAsset(amount), std::string("Zap dots unbonded."))
+                std::make_tuple(from, to, Bondage::toAsset(amount), memo)
             ).send();
         }
 };
 
-EOSIO_ABI(Bondage, (bond)(unbond)(estimate)(escrow)(release)(viewhe)(viewh)(viewi))
+//EOSIO_ABI(Bondage, (bond)(unbond)(estimate)(escrow)(release)(viewhe)(viewh)(viewi))
