@@ -173,6 +173,13 @@ void Bondage::release(account_name subscriber, account_name provider, std::strin
     eosio_assert(issued_iterator != issued.end(), "Issued dots not found.");
     eosio_assert(subscriber_iterator != s_idx.end(), "Holder not found.");
     eosio_assert(subscriber_iterator->escrow >= dots, "Not enough escrow dots.");
+
+    // Calculate amount of zap tokens that provider will receive
+    uint64_t price = Bondage::get_withdraw_price(provider, endpoint, issued_iterator->dots, dots);
+
+    // Send tokens to provider
+    Bondage::transfer_tokens(_self, provider, price, "release");
+    print_f("Escrow updated, escrow dots removed = %, zap tokens transfered = %.\n", dots, price);
  
     // Remove specified amount of dots from subscriber escrow
     s_idx.modify(subscriber_iterator, subscriber, [&] (auto& h) {
@@ -183,13 +190,6 @@ void Bondage::release(account_name subscriber, account_name provider, std::strin
         i.dots = i.dots - dots;
     });
     print_f("Bond: issued updated, substructed value = %.\n", dots);
-
-    // Calculate amount of zap tokens that provider will receive
-    uint64_t price = Bondage::get_withdraw_price(provider, endpoint, issued_iterator->dots, dots);
-
-    // Send tokens to provider
-    Bondage::transfer_tokens(_self, provider, price, "release");
-    print_f("Escrow updated, escrow dots removed = %, zap tokens transfered = %.\n", dots, price);
 }
 
 void Bondage::viewhe(account_name holder, account_name provider, std::string endpoint) {

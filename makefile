@@ -48,8 +48,8 @@ init_accs:
 grant_permissions:
 	-cleos wallet unlock -n default --password $(WALLET_PWD)
 	-cleos wallet unlock -n test --password $(TEST_WALLET_PWD)
-	cleos set account permission $(TEST_ACC) active '{"threshold": 1,"keys": [{"key": "EOS8LV5e4oGMFwKkWJyfffdgYaD2JPbhmBcaLd4kkE3zTjr3hxk2C","weight": 1}],"accounts": [{"permission":{"actor":"zap.bondage","permission":"eosio.code"},"weight":1}]}' owner -p $(TEST_ACC)
-	cleos set account permission $(MAIN_ACC) active '{"threshold": 1,"keys": [{"key": "EOS7jEmggyJqyKitbsaTYELQCRN71jAhmhwX1Zv89NFZLzaKfrX7X","weight": 1}],"accounts": [{"permission":{"actor":"zap.bondage","permission":"eosio.code"},"weight":1}]}' owner -p $(MAIN_ACC)
+	cleos set account permission $(TEST_ACC) active '{"threshold": 1,"keys": [{"key": "EOS8LV5e4oGMFwKkWJyfffdgYaD2JPbhmBcaLd4kkE3zTjr3hxk2C","weight": 1}],"accounts": [{"permission":{"actor":"zap.main","permission":"eosio.code"},"weight":1}]}' owner -p $(TEST_ACC)
+	cleos set account permission $(MAIN_ACC) active '{"threshold": 1,"keys": [{"key": "EOS7jEmggyJqyKitbsaTYELQCRN71jAhmhwX1Zv89NFZLzaKfrX7X","weight": 1}],"accounts": [{"permission":{"actor":"zap.main","permission":"eosio.code"},"weight":1}]}' owner -p $(MAIN_ACC)
 
 issue_tokens_for_testacc: 
 	-cleos wallet unlock -n default --password $(WALLET_PWD)
