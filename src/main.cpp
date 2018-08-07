@@ -26,7 +26,15 @@ void Main::escrow(account_name subscriber, account_name provider, std::string en
 }
 
 void Main::release(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots) {
-     Main::bondage.release(subscriber, provider, endpoint, dots);
+    Main::bondage.release(subscriber, provider, endpoint, dots);
+}
+
+void Main::query(account_name subscriber, account_name provider, std::string endpoint, std::string query, bool onchain_provider, bool onchain_subscriber) {
+    Main::dispatcher.query(subscriber, provider, endpoint, query, onchain_provider, onchain_subscriber);
+}
+
+void Main::respond(account_name responder, uint64_t id, std::string params) {
+    Main::dispatcher.respond(responder, id, params);
 }
 
 void Main::viewps(uint64_t from, uint64_t to) {

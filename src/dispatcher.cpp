@@ -1,44 +1,61 @@
 #include <dispatcher.hpp>
+#include <bondage.hpp>
 
-void Dispatcher::query(account_name from, std::string endpoint) {
-    require_auth(from);
+#define QUERY_CALL_PRICE 1
 
-    Dispatcher::queryIndex queries(_self, _self);
+void Dispatcher::query(account_name subscriber, account_name provider, std::string endpoint, std::string query, bool onchain_provider, bool onchain_subscriber) {
+    require_auth(subscriber);
 
-    uint64_t availableKey = queries.available_primary_key();
-    print_f("query to save: id = %, user = %, endpoint = %, executed = false",
-        availableKey, from, endpoint);
+    db::queryIndex queries(_self, _self);
 
-    queries.emplace(from, [&](auto& q) {
-        q.id = availableKey;
-        q.user = from;
-        q.endpoint = endpoint;
-        q.executed = false;
-    });
+    uint64_t bound = Dispatcher::get_bound_dots(subscriber, provider, endpoint);
+    eosio_assert(bound > 0, "Haven't got bonded dots for provider." );
+
+    Dispatcher::escrow(subscriber, provider, endpoint, QUERY_CALL_PRICE);
+
+    if (onchain_provider) {
+        require_recipient(provider); 
+    } else {
+        uint64_t availableKey = queries.available_primary_key();
+        queries.emplace(subscriber, [&](auto& q) {
+            q.id = availableKey;
+            q.provider = provider;
+            q.subscriber = subscriber;
+            q.endpoint = endpoint;
+            q.data = query;
+            q.onchain = onchain_subscriber;
+        });
+
+        print_f("Query called: id = %, sub = %, provider = %, endpoint = %;", availableKey, name{subscriber}, name{provider}, endpoint);
+    }   
 }
 
-void Dispatcher::respond(account_name provider, uint64_t id, std::string query) {
-    Dispatcher::queryIndex queries(_self, _self);
+void Dispatcher::respond(account_name responder, uint64_t id, std::string params) {
+    require_auth(responder);
 
-    auto iterator = queries.find(id);
-    eosio_assert(iterator != queries.end(), "Query not found!");
+    db::queryIndex queries(_self, _self);
+    auto q = queries.find(id);
 
-    queries.modify(iterator, provider, [&](auto& q) {
-        q.executed = true;
-    });
+    eosio_assert(q != queries.end(), "Query fullfilled or doesn't exists.");
+    eosio_assert(q->provider == responder, "Only query provider can respond to query.");  
 
-    print_f("Query with id = % is executed.", id);
-}
+    if (q->onchain) {
+        action(
+            permission_level{ responder, N(active) },
+            q->subscriber, N(callback),
+            std::make_tuple(params)
+        ).send();
+    } else {
+        //TODO: implement event for offchain subscriber
+    }
 
-void Dispatcher::queries() {
-    Dispatcher::queryIndex queries(_self, _self);
+    Dispatcher::release(q->subscriber, q->provider, q->endpoint, QUERY_CALL_PRICE);
 
-    uint64_t id = 0;
-    while(queries.find(id) != queries.end()) {
-	auto q = queries.get(id);
-    	print_f("query[%]: user=%, endpoint=%, executed=%\n", q.id, q.user, q.endpoint, q.executed);
-	id++;
+    bool deleted = Dispatcher::delete_query(q->id);
+    if (deleted) {
+        print_f("Query responded successfully, id = %", q->id);
+    } else {
+        print_f("Query responded with error while deleting, id = %", q->id);
     }
 }
-
 

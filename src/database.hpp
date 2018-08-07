@@ -11,9 +11,27 @@
 using namespace eosio;
 
 namespace db {
+    //TODO: must be changed to prod account
+    static account_name zap_token = N(zap.token);
+    
+    static const std::string ZAP_TOKEN_SYMBOL = "TST";
+    static const uint8_t ZAP_TOKEN_DECIMALS = 0;
 
     static std::array<uint128_t, 2> checksum256_to_uint128array(checksum256 c);
     static key256 hash(account_name provider, std::string specifier);
+
+    //Convert specified amount of tokens to <asset> structure
+    static eosio::asset toAsset(uint64_t tokensAmount) {
+        return asset(tokensAmount, symbol_type(string_to_symbol(ZAP_TOKEN_DECIMALS, ZAP_TOKEN_SYMBOL.c_str())));
+    }
+
+    void transfer_tokens(account_name from, account_name to, uint64_t amount, std::string memo) {
+        action(
+            permission_level{ from, N(active) },
+            zap_token, N(transfer),
+            std::make_tuple(from, to, toAsset(amount), memo)
+        ).send();
+    }
 
     // TODO: must be reviewed
     // Does this hash will be always unique?
@@ -108,6 +126,21 @@ namespace db {
         EOSLIB_SERIALIZE(issued, (endpointid)(dots))
     };
 
+    //@abi table query_data i64
+    //Table to store user queries
+    struct query_data {
+        uint64_t id;
+        account_name provider;
+        account_name subscriber;
+        std::string endpoint;
+        std::string data;
+        bool onchain;
+
+        uint64_t primary_key() const { return id; }
+
+        EOSLIB_SERIALIZE(query_data, (id)(provider)(subscriber)(endpoint)(data)(onchain))
+    };
+
     typedef multi_index<N(provider), provider> providerIndex;
     typedef multi_index<N(endpoint), endpoint,
                 indexed_by<N(byprovider), const_mem_fun<endpoint, uint64_t, &endpoint::get_provider>>,
@@ -117,6 +150,7 @@ namespace db {
                 indexed_by<N(byhash), const_mem_fun<holder, key256, &holder::get_hash>>
             > holderIndex;
     typedef multi_index<N(issued), issued> issuedIndex;
+    typedef multi_index<N(query_data), query_data> queryIndex;
 }
 
 #endif DATABASE_HEADER

@@ -2,6 +2,7 @@
 
 #include <bondage.cpp>
 #include <registry.cpp>
+#include <dispatcher.cpp>
 
 using namespace eosio;
 
@@ -9,7 +10,7 @@ class Main: public eosio::contract {
     public:
         using contract::contract;
 
-        Main(account_name n): eosio::contract(n), bondage(n), registry(n) { }
+        Main(account_name n): eosio::contract(n), bondage(n), registry(n), dispatcher(n) { }
 
         // REGISTRY METHODS
 
@@ -51,6 +52,16 @@ class Main: public eosio::contract {
         //Dots will be removed from subscriber holder
         void release(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots);
 
+        // DISPATCHER METHODS
+
+        //@abi action
+        //Query provider data
+        void query(account_name subscriber, account_name provider, std::string endpoint, std::string query, bool onchain_provider, bool onchain_subscriber);
+
+        //@abi action
+        //Query provider data
+        void respond(account_name responder, uint64_t id, std::string params);
+
 	
         // VIEW METHODS
 
@@ -85,10 +96,9 @@ class Main: public eosio::contract {
 
      
     private:
-
         Bondage bondage;
-
         Registry registry;
+        Dispatcher dispatcher;
 };
 
-EOSIO_ABI(Main, (newprovider)(addendpoint)(bond)(unbond)(estimate)(escrow)(release)(viewps)(viewes)(endpbyhash)(viewhe)(viewh)(viewi))
+EOSIO_ABI(Main, (newprovider)(addendpoint)(bond)(unbond)(estimate)(escrow)(release)(query)(respond)(viewps)(viewes)(endpbyhash)(viewhe)(viewh)(viewi))

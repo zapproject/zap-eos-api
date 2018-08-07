@@ -21,18 +21,6 @@ class Bondage {
 
         //Estimate price of dots (in integral zap tokens) for specified provider 
         void estimate(account_name provider, std::string endpoint, uint64_t dots);
-
-        //Escrow dots to specified endpoint
-        //Can be called only by dispatch provider
-        //User can not withdraw dots from escrow
-        void escrow(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots);
-
-        //Convert escrowed dots of subscriber to zap tokens and send tokens to provider
-        //Escrow dots will be removed
-        //Provider will receive zap tokens for escrowed dots
-        //Dots will be removed from total issued of endpoint
-        //Dots will be removed from subscriber holder
-        void release(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots);
         
         // VIEW METHODS
 
@@ -45,45 +33,34 @@ class Bondage {
         //View total issued dots for specified endpoint
         void viewi(account_name provider, std::string endpoint);
 
-    private:
-        const std::string ZAP_TOKEN_SYMBOL = "TST";
-        const uint8_t ZAP_TOKEN_DECIMALS = 0;
-
-        account_name _self;
-        
-        //TODO: must be changed to prod account
-        account_name zap_token = N(zap.token);
-
-        //Convert specified amount of tokens to <asset> structure
-        eosio::asset toAsset(uint64_t tokensAmount) {
-            return asset(tokensAmount, symbol_type(string_to_symbol(ZAP_TOKEN_DECIMALS, ZAP_TOKEN_SYMBOL.c_str())));
-        }
 
         //Calc price of dots for bonding 
-        uint64_t get_dots_price(account_name provider, std::string endpoint, uint64_t total_issued, uint64_t dots_to_buy) {
+        static uint64_t get_dots_price(db::endpoint endpoint, uint64_t total_issued, uint64_t dots_to_buy) {
             uint64_t price = 0;
             for (uint64_t i = 0; i < dots_to_buy; i++) {
                 uint64_t current_dot = i + total_issued + 1;
-                price += calc_dot_price(provider, endpoint, current_dot);
+                price += calc_dot_price(endpoint, current_dot);
             }
             
             return price;
         }
 
         //Calc price of dots for withdrawing
-        uint64_t get_withdraw_price(account_name provider, std::string endpoint, uint64_t total_issued, uint64_t dots_to_withdraw) {
+        static uint64_t get_withdraw_price(db::endpoint endpoint, uint64_t total_issued, uint64_t dots_to_withdraw) {
             uint64_t price = 0;
             for (uint64_t i = 0; i < dots_to_withdraw; i++) {
                 uint64_t current_dot = total_issued - i;
-                price += calc_dot_price(provider, endpoint, current_dot);
+                price += calc_dot_price(endpoint, current_dot);
             }
             
             return price;
         }
 
+    private:
+        account_name _self;
+
         //Calculate price of specified dot number for specified endpoint
-        uint64_t calc_dot_price(account_name provider, std::string endpoint_specifier, uint64_t dot) {
-            db::endpoint endpoint = get_endpoint(provider, endpoint_specifier);
+        static uint64_t calc_dot_price(db::endpoint endpoint, uint64_t dot) {
             for (uint64_t i = 0; i < endpoint.dividers.size(); i++) {
                 uint64_t start = endpoint.parts[2 * i];
                 if (dot < start) continue;
@@ -111,7 +88,7 @@ class Bondage {
             return 0;             
         }
 
-        uint64_t fast_log2(int64_t x) {
+        static uint64_t fast_log2(int64_t x) {
             uint64_t ix = (uint64_t&)x;
             uint64_t exp = (ix >> 23) & 0xFF;
             uint64_t log2 = uint64_t(exp) - 127;
@@ -128,14 +105,6 @@ class Bondage {
             auto hashItr = idx.find(hash);
             auto item = endpoints.get(hashItr->id);
             return item;
-        }
-
-        void transfer_tokens(account_name from, account_name to, uint64_t amount, std::string memo) {
-            action(
-                permission_level{ from, N(active) },
-                zap_token, N(transfer),
-                std::make_tuple(from, to, Bondage::toAsset(amount), memo)
-            ).send();
         }
 };
 
