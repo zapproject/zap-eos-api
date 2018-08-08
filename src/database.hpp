@@ -25,7 +25,7 @@ namespace db {
         return asset(tokensAmount, symbol_type(string_to_symbol(ZAP_TOKEN_DECIMALS, ZAP_TOKEN_SYMBOL.c_str())));
     }
 
-    void transfer_tokens(account_name from, account_name to, uint64_t amount, std::string memo) {
+    static void transfer_tokens(account_name from, account_name to, uint64_t amount, std::string memo) {
         action(
             permission_level{ from, N(active) },
             zap_token, N(transfer),
@@ -151,6 +151,57 @@ namespace db {
             > holderIndex;
     typedef multi_index<N(issued), issued> issuedIndex;
     typedef multi_index<N(query_data), query_data> queryIndex;
+
+    static uint64_t update_issued(issuedIndex& issued, account_name payer, uint64_t endpoint_id, uint64_t dots) {
+        auto issued_iterator = issued.find(endpoint_id);
+        uint64_t total_issued_dots = 0;
+        if (issued_iterator != issued.end()) {
+            total_issued_dots = issued_iterator->dots;
+            issued.modify(issued_iterator, payer, [&](auto& i) {
+                i.dots = i.dots + dots;
+            });
+            print_f("Issued updated, added value = %.\n", dots);
+        } else {
+            issued.emplace(payer, [&](auto& i) {
+                i.endpointid = endpoint_id;
+                i.dots = dots;
+            });
+            print_f("New issued created, endpointid = %; dots = %.\n", endpoint_id, dots);
+        }
+        return total_issued_dots;
+    }
+
+    static auto update_holder(holderIndex& holders, account_name payer, account_name provider, std::string endpoint, uint64_t dots, uint64_t escrow) {
+        auto holders_index = holders.get_index<N(byhash)>();
+        auto holders_iterator = holders_index.find(db::hash(provider, endpoint));
+        if (holders_iterator != holders_index.end()) {
+            holders_index.modify(holders_iterator, payer, [&](auto& h) {
+                h.dots = h.dots + dots;
+                h.escrow = h.escrow + escrow;
+            });
+            print_f("Holder updated, added value = %.\n", dots);
+        } else {
+            holders.emplace(payer, [&](auto& h) {
+                h.provider = provider;
+                h.endpoint = endpoint;
+                h.dots = dots;
+                h.escrow = escrow;
+            });
+            print_f("New holder created, provider = %; endpoint = %; dots = %.\n", name{provider}, endpoint, dots);
+        }
+        return holders_iterator;
+    }
+
+    static bool delete_query(queryIndex& queries, uint64_t id) {       
+        auto iterator = queries.find(id);
+        if (iterator != queries.end()) {
+            queries.erase(iterator);
+            return true;
+        } else {
+            return false;
+        }
+    }
+        
 }
 
 #endif DATABASE_HEADER

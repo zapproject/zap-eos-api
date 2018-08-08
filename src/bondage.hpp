@@ -95,17 +95,6 @@ class Bondage {
 
             return log2;
         }
-
-        //Get endpoint object from registry contract
-        db::endpoint get_endpoint(account_name provider, std::string endpoint_specifier) {
-            db::endpointIndex endpoints(_self, provider);
-
-            auto idx = endpoints.get_index<N(byhash)>();
-            key256 hash = key256(db::hash(provider, endpoint_specifier));
-            auto hashItr = idx.find(hash);
-            auto item = endpoints.get(hashItr->id);
-            return item;
-        }
 };
 
 //EOSIO_ABI(Bondage, (bond)(unbond)(estimate)(escrow)(release)(viewhe)(viewh)(viewi))

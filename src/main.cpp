@@ -21,14 +21,6 @@ void Main::estimate(account_name provider, std::string endpoint, uint64_t dots) 
     Main::bondage.estimate(provider, endpoint, dots);
 }
 
-void Main::escrow(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots) {
-    Main::bondage.escrow(subscriber, provider, endpoint, dots);
-}
-
-void Main::release(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots) {
-    Main::bondage.release(subscriber, provider, endpoint, dots);
-}
-
 void Main::query(account_name subscriber, account_name provider, std::string endpoint, std::string query, bool onchain_provider, bool onchain_subscriber) {
     Main::dispatcher.query(subscriber, provider, endpoint, query, onchain_provider, onchain_subscriber);
 }

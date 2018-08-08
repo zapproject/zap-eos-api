@@ -38,20 +38,6 @@ class Main: public eosio::contract {
         //Estimate price of dots (in integral zap tokens) for specified provider 
         void estimate(account_name provider, std::string endpoint, uint64_t dots);
 
-        //@abi action
-        //Escrow dots to specified endpoint
-        //Can be called only by dispatch provider
-        //User can not withdraw dots from escrow
-        void escrow(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots);
-
-        //@abi action
-        //Convert escrowed dots of subscriber to zap tokens and send tokens to provider
-        //Escrow dots will be removed
-        //Provider will receive zap tokens for escrowed dots
-        //Dots will be removed from total issued of endpoint
-        //Dots will be removed from subscriber holder
-        void release(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots);
-
         // DISPATCHER METHODS
 
         //@abi action
@@ -101,4 +87,4 @@ class Main: public eosio::contract {
         Dispatcher dispatcher;
 };
 
-EOSIO_ABI(Main, (newprovider)(addendpoint)(bond)(unbond)(estimate)(escrow)(release)(query)(respond)(viewps)(viewes)(endpbyhash)(viewhe)(viewh)(viewi))
+EOSIO_ABI(Main, (newprovider)(addendpoint)(bond)(unbond)(estimate)(query)(respond)(viewps)(viewes)(endpbyhash)(viewhe)(viewh)(viewi))

@@ -15,24 +15,11 @@ class Dispatcher {
     private:
         account_name _self;   
 
-        bool delete_query(uint64_t id) {
-            db::queryIndex queries(_self, _self);
-
-            auto iterator = queries.find(id);
-            if (iterator != queries.end()) {
-                queries.erase(iterator);
-                return true;
-            } else {
-                return false;
-            }
-        }
-        
         uint64_t get_bound_dots(account_name subscriber, account_name provider, std::string endpoint) {
             db::holderIndex holders(_self, subscriber);
             
-            key256 hash = key256(db::hash(provider, endpoint));
             auto hidx = holders.get_index<N(byhash)>();
-            auto holders_iterator = hidx.find(hash);
+            auto holders_iterator = hidx.find(db::hash(provider, endpoint));
             
             if (holders_iterator != hidx.end()) {
                 return holders_iterator->dots;
@@ -45,21 +32,19 @@ class Dispatcher {
         //Can be called only by dispatch provider
         //User can not withdraw dots from escrow
         void escrow(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots) {
-            db::holderIndex holders(_self, subscriber);
+            db::holderIndex* holders = new db::holderIndex(_self, subscriber);
 
-            key256 hash = key256(db::hash(provider, endpoint));
-            auto idx = holders.get_index<N(byhash)>();
-            auto holders_iterator = idx.find(hash);
+            auto idx = holders->get_index<N(byhash)>();
+            auto holders_iterator = idx.find(db::hash(provider, endpoint));
         
             eosio_assert(holders_iterator != idx.end(), "Holder not found.");
             eosio_assert(holders_iterator->dots >= dots, "Not enough dots.");
          
             // Remove specified amount of dots and add them to subscriber escrow
-            idx.modify(holders_iterator, subscriber, [&] (auto& h) {
-                h.dots = h.dots - dots;
-                h.escrow = h.escrow + dots;
-            });   
+            db::update_holder(*holders, subscriber, provider, endpoint, -dots, dots);
             print_f("Escrow updated, escrow dots added = %.\n", dots);
+
+            delete holders;
         }    
 
         //Convert escrowed dots of subscriber to zap tokens and send tokens to provider
@@ -68,39 +53,36 @@ class Dispatcher {
         //Dots will be removed from total issued of endpoint
         //Dots will be removed from subscriber holder
         void release(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots) {
-            db::holderIndex subscriber_holders(_self, subscriber);
-            db::endpointIndex endpoints(_self, provider);
-            db::issuedIndex issued(_self, provider);
+             db::holderIndex* holders = new db::holderIndex(_self, subscriber);
+             db::endpointIndex* endpoints = new db::endpointIndex(_self, provider);
+             db::issuedIndex* issued = new db::issuedIndex(_self, provider);
         
-            key256 hash = key256(db::hash(provider, endpoint));
-            auto e_idx = endpoints.get_index<N(byhash)>();
-            auto endpoints_iterator = e_idx.find(hash);
-            auto issued_iterator = issued.find(endpoints_iterator->id);
+            auto endpoints_index = endpoints->get_index<N(byhash)>();
+            auto endpoints_iterator = endpoints_index.find(db::hash(provider, endpoint));
+            auto issued_iterator = issued->find(endpoints_iterator->id);
 
-            auto s_idx = subscriber_holders.get_index<N(byhash)>();
-            auto subscriber_iterator = s_idx.find(hash);
+            auto holders_index = holders->get_index<N(byhash)>();
+            auto holders_iterator = holders_index.find(db::hash(provider, endpoint));
 
             // Check that subscriber have bonded dots and his escrow dots are bigger or equal to dots for release
-            eosio_assert(issued_iterator != issued.end(), "Issued dots not found.");
-            eosio_assert(subscriber_iterator != s_idx.end(), "Holder not found.");
-            eosio_assert(subscriber_iterator->escrow >= dots, "Not enough escrow dots.");
+            eosio_assert(issued_iterator != issued->end(), "Issued dots not found.");
+            eosio_assert(holders_iterator != holders_index.end(), "Holder not found.");
+            eosio_assert(holders_iterator->escrow >= dots, "Not enough escrow dots.");
 
             // Calculate amount of zap tokens that provider will receive
-            uint64_t price = Bondage::get_withdraw_price(provider, endpoint, issued_iterator->dots, dots);
+            uint64_t price = Bondage::get_withdraw_price(endpoints->get(endpoints_iterator->id), issued_iterator->dots, dots);
 
             // Send tokens to provider
             db::transfer_tokens(_self, provider, price, "release");
             print_f("Escrow updated, escrow dots removed = %, zap tokens transfered = %.\n", dots, price);
  
             // Remove specified amount of dots from subscriber escrow
-            s_idx.modify(subscriber_iterator, subscriber, [&] (auto& h) {
-                h.escrow = h.escrow - dots;
-            });   
+            db::update_holder(*holders, subscriber, provider, endpoint, 0, -dots);
+            db::update_issued(*issued, subscriber, issued_iterator->endpointid, -dots);
 
-            issued.modify(issued_iterator, subscriber, [&](auto& i) {
-                i.dots = i.dots - dots;
-            });
-            print_f("Bond: issued updated, substructed value = %.\n", dots);
+            delete holders;
+            delete endpoints;
+            delete issued;
         }    
 
 };
