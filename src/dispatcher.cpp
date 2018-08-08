@@ -6,8 +6,6 @@
 void Dispatcher::query(account_name subscriber, account_name provider, std::string endpoint, std::string query, bool onchain_provider, bool onchain_subscriber) {
     require_auth(subscriber);
 
-    db::queryIndex queries(_self, _self);
-
     uint64_t bound = Dispatcher::get_bound_dots(subscriber, provider, endpoint);
     eosio_assert(bound > 0, "Haven't got bonded dots for provider." );
 
@@ -33,10 +31,9 @@ void Dispatcher::query(account_name subscriber, account_name provider, std::stri
 void Dispatcher::respond(account_name responder, uint64_t id, std::string params) {
     require_auth(responder);
 
-    db::queryIndex* queries = new db::queryIndex(_self, _self);
-    auto q = queries->find(id);
+    auto q = queries.find(id);
 
-    eosio_assert(q != queries->end(), "Query fullfilled or doesn't exists.");
+    eosio_assert(q != queries.end(), "Query fullfilled or doesn't exists.");
     eosio_assert(q->provider == responder, "Only query provider can respond to query.");  
 
     if (q->onchain) {
@@ -51,13 +48,11 @@ void Dispatcher::respond(account_name responder, uint64_t id, std::string params
 
     Dispatcher::release(q->subscriber, q->provider, q->endpoint, QUERY_CALL_PRICE);
 
-    bool deleted = db::delete_query(*queries, q->id);
+    bool deleted = Dispatcher::delete_query(queries, q->id);
     if (deleted) {
         print_f("Query responded successfully, id = %", q->id);
     } else {
         print_f("Query responded with error while deleting, id = %", q->id);
     }
-
-    delete queries;
 }
 
