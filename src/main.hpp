@@ -3,6 +3,7 @@
 #include <bondage.cpp>
 #include <registry.cpp>
 #include <dispatcher.cpp>
+#include <arbiter.cpp>
 
 using namespace eosio;
 
