@@ -1,9 +1,8 @@
 #pragma once
 
-#include <bondage.cpp>
-#include <registry.cpp>
-#include <dispatcher.cpp>
-#include <arbiter.cpp>
+#include "bondage.cpp"
+#include "registry.cpp"
+#include "dispatcher.cpp"
 
 using namespace eosio;
 

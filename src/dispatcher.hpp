@@ -1,4 +1,4 @@
-#include <database.hpp>
+#include "database.hpp"
 
 using namespace eosio;
 
@@ -11,6 +11,12 @@ class Dispatcher {
 
         //Respond to query
         void respond(account_name responder, uint64_t id, std::string params);
+
+        //Buy subscription to provider endpoint
+        void subscribe(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots);
+
+        //Remove subscription
+        void unsubscribe(account_name subscriber, account_name provider, std::string endpoint, bool from_sub);
 
     private:
         account_name _self;   

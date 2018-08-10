@@ -1,5 +1,5 @@
-#include <dispatcher.hpp>
-#include <bondage.hpp>
+#include "dispatcher.hpp"
+#include "bondage.hpp"
 
 #define QUERY_CALL_PRICE 1
 #define DOT_SECONDS 60
@@ -60,7 +60,7 @@ void Dispatcher::respond(account_name responder, uint64_t id, std::string params
 void Dispatcher::subscribe(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots) {
     require_auth(subscriber);
 
-    eosio_assert(dosts > 0, "Dots number must be bigger than zero.");
+    eosio_assert(dots > 0, "Dots number must be bigger than zero.");
 
     db::subscriptionIndex subscriptions(_self, provider);
 
@@ -81,7 +81,7 @@ void Dispatcher::subscribe(account_name subscriber, account_name provider, std::
         s.end = end;
         s.subscriber = subscriber;
         s.endpoint = endpoint;
-    })
+    });
 }
 
 void Dispatcher::unsubscribe(account_name subscriber, account_name provider, std::string endpoint, bool from_sub) {

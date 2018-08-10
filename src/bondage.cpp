@@ -1,4 +1,4 @@
-#include <bondage.hpp>
+#include "bondage.hpp"
 #include <eosiolib/action.hpp>
 
 void Bondage::bond(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots) {

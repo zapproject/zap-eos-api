@@ -1,26 +1,54 @@
 #MUST BE YOUR WALLET PASSWORDS
 #PASSWORD FOR WALLET THAT WILL DEPLOY CONTRACTS
-WALLET_PWD = PW5KG8hve1T9HyfWUJJC5E5Q2vNSXEeQiLs6WpphFbwf2EAuAXPYW
+WALLET_PWD = PW5KDk8rKpGrNbVZbt6PG3HEWGHAqb5mj13qRNHemvCNaysFtN78n
 #PUBLIC KEY OF ACCOUNTS FOR WALLET ABOVE
-PUBLIC_KEY = EOS7jEmggyJqyKitbsaTYELQCRN71jAhmhwX1Zv89NFZLzaKfrX7X
+PUBLIC_KEY = EOS7yo4KpfPVGrigndBv9AHP4KMAkpAAUA93RUozZFMLp8eoX56BG
 #ACCOUNTS THAT USES PUBLIC KEY ABOVE
 MAIN_ACC = zap.main
 TOKEN_ACC = zap.token
 
 #PASSWORD FOR WALLET THAT WILL CREATE PROVIDER AND CALL BOND/UNBOND
-TEST_WALLET_PWD = PW5KDd3voZ78YAECFSbz1E5KQA1xS8GNAmTqQvicU81nmii7NstPA
+TEST_WALLET_PWD = PW5Kkwogcis8LiiDbF5hZXKBzSHiKoYhF4FAwkZzKsoM6sEJL3jhA
 #PUBLIC KEY OF ACCOUNTS FOR WALLET ABOVE
-PUBLIC_KEY_USER_ACCS = EOS8LV5e4oGMFwKkWJyfffdgYaD2JPbhmBcaLd4kkE3zTjr3hxk2C
+PUBLIC_KEY_USER_ACCS = EOS84zFiw5gCEhjtsDipPKHx3b89oZ5dk1Bu1CQ3RK9PCVMiQZCzk
 #ACCOUNTS THAT USES PUBLIC KEY ABOVE
 TEST_PROVIDER_ACC = provider
 TEST_ACC = kostya.s
 
 #PROJEC DIRECTORY
-PROJECT_DIR = /home/kostya/blockchain/zap_eos_contracts
+PROJECT_DIR = /home/kostya/blockchain/zap-eos-api
 #EOS SOURCES DIRECTORY (SOURCEC MUST BE BUILDED)
 EOS_DIR = /home/kostya/blockchain/eos
 #DIRECTORY OF DEFAULT TOKEN CONTRACT
 TOKEN_DIR = $(EOS_DIR)/build/contracts/eosio.token
+
+install:
+	-mkdir $(PROJECT_DIR)/build
+	-mkdir $(PROJECT_DIR)/build/main
+	
+generate_abi:
+	-mkdir $(PROJECT_DIR)/build
+	-mkdir $(PROJECT_DIR)/build/main
+	eosiocpp -g $(PROJECT_DIR)/build/main/main.abi $(PROJECT_DIR)/src/main.hpp
+	
+deploy_all:
+	-cleos wallet unlock -n default --password $(WALLET_PWD)
+	-cleos set contract $(MAIN_ACC) $(PROJECT_DIR)/build/main -p $(MAIN_ACC)
+	-cleos set contract $(TOKEN_ACC) $(TOKEN_DIR) -p $(TOKEN_ACC)
+	-cleos push action $(TOKEN_ACC) create '["zap.token", "1000000000 TST"]' -p $(TOKEN_ACC)
+
+deploy_token:
+	-cleos wallet unlock -n default --password $(WALLET_PWD)
+	cleos set contract $(TOKEN_ACC) $(TOKEN_DIR) -p $(TOKEN_ACC)
+	cleos push action $(TOKEN_ACC) create '["zap.token", "1000000000 TST"]' -p $(TOKEN_ACC)
+
+deploy_main:
+	-cleos wallet unlock -n default --password $(WALLET_PWD)
+	-cleos set contract $(MAIN_ACC) $(PROJECT_DIR)/build/main -p $(MAIN_ACC)
+
+#                          #
+# SMART CONTRACTS COMMANDS #
+#                          #
 
 init_provider:
 	-cleos wallet unlock -n test --password $(TEST_WALLET_PWD)
@@ -58,27 +86,6 @@ issue_tokens_for_testacc:
 testacc_balance:
 	-cleos wallet unlock -n default --password $(WALLET_PWD)
 	cleos get currency balance $(TOKEN_ACC) $(TEST_ACC) "TST"
-	
-build_all:
-	-mkdir $(PROJECT_DIR)/build
-	-mkdir $(PROJECT_DIR)/build/main
-	eosiocpp -o $(PROJECT_DIR)/build/main/main.wast $(PROJECT_DIR)/src/main.cpp
-	eosiocpp -g $(PROJECT_DIR)/build/main/main.abi $(PROJECT_DIR)/src/main.hpp
-	
-deploy_all:
-	-cleos wallet unlock -n default --password $(WALLET_PWD)
-	-cleos set contract $(MAIN_ACC) $(PROJECT_DIR)/build/main -p $(MAIN_ACC)
-	-cleos set contract $(TOKEN_ACC) $(TOKEN_DIR) -p $(TOKEN_ACC)
-	-cleos push action $(TOKEN_ACC) create '["zap.token", "1000000000 TST"]' -p $(TOKEN_ACC)
-
-deploy_token:
-	-cleos wallet unlock -n default --password $(WALLET_PWD)
-	cleos set contract $(TOKEN_ACC) $(TOKEN_DIR) -p $(TOKEN_ACC)
-	cleos push action $(TOKEN_ACC) create '["zap.token", "1000000000 TST"]' -p $(TOKEN_ACC)
-
-deploy_main:
-	-cleos wallet unlock -n default --password $(WALLET_PWD)
-	-cleos set contract $(MAIN_ACC) $(PROJECT_DIR)/build/main -p $(MAIN_ACC)
 
 
 
