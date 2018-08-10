@@ -4,7 +4,7 @@
 #define ZAP_TOKEN_SYMBOL "TST"
 #define ZAP_TOKEN_DECIMALS 0
 
-#include <eosiolib/eosio.hpp>
+//#include <eosio/chain/eosio_contract.hpp>
 #include <eosiolib/crypto.h>
 #include <eosiolib/fixed_key.hpp>
 #include <eosiolib/asset.hpp>

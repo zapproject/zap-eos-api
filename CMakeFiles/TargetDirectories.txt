@@ -1,0 +1,3 @@
+/home/kostya/blockchain/zap-eos-api/CMakeFiles/rebuild_cache.dir
+/home/kostya/blockchain/zap-eos-api/CMakeFiles/main.wast.dir
+/home/kostya/blockchain/zap-eos-api/CMakeFiles/edit_cache.dir
