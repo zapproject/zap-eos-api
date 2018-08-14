@@ -102,9 +102,12 @@ void Dispatcher::unsubscribe(account_name subscriber, account_name provider, std
     if (current_time < sub_iterator->end) {
         time passed = current_time - sub_iterator->start;
         uint64_t dots_used = passed / DOT_SECONDS;
+        Dispatcher::release(subscriber, provider, endpoint, dots_used);
     } else {
-    
+        Dispatcher::release(subscriber, provider, endpoint, sub_iterator->dots);
     }
+
+    sub_hash_iterator.erase(subscriber, sub_iterator);
 }
 
 
