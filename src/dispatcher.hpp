@@ -140,16 +140,10 @@ class Dispatcher {
             eosio_assert(issued_iterator != issued.end(), "Issued dots not found.");
             eosio_assert(holders_iterator != holders_index.end(), "Holder not found.");
             eosio_assert(holders_iterator->escrow >= dots, "Not enough escrow dots.");
-
-            // Calculate amount of zap tokens that provider will receive
-            uint64_t price = Bondage::get_withdraw_price(endpoints.get(endpoints_iterator->id), issued_iterator->dots, dots);
-
-            // Send tokens to provider
-            transfer_tokens(_self, provider, price, "release");
-            print_f("Escrow updated, escrow dots removed = %, zap tokens transfered = %.\n", dots, price);
  
             // Remove specified amount of dots from subscriber escrow
             update_holder(holders, subscriber, provider, endpoint, 0, -dots);
+            update_holder(holders, provider, provider, endpoint, 0, dots);
             update_issued(issued, subscriber, issued_iterator->endpointid, -dots);
         }    
 
