@@ -16,7 +16,7 @@ TEST_PROVIDER_ACC = provider
 TEST_ACC = kostya.s
 
 #PROJEC DIRECTORY
-PROJECT_DIR = /home/kostya/blockchain/zap_eos_contracts
+PROJECT_DIR = /home/kostya/blockchain/zap-eos-api
 #EOS SOURCES DIRECTORY (SOURCEC MUST BE BUILDED)
 EOS_DIR = /home/kostya/blockchain/eos
 #DIRECTORY OF DEFAULT TOKEN CONTRACT
@@ -30,6 +30,11 @@ generate_abi:
 	-mkdir $(PROJECT_DIR)/build
 	-mkdir $(PROJECT_DIR)/build/main
 	eosiocpp -g $(PROJECT_DIR)/build/main/main.abi $(PROJECT_DIR)/src/main.hpp
+
+lcompile:
+	-mkdir $(PROJECT_DIR)/build
+	-mkdir $(PROJECT_DIR)/build/main
+	eosiocpp -o $(PROJECT_DIR)/build/main/main.wast $(PROJECT_DIR)/src/main.cpp
 	
 deploy_all:
 	-cleos wallet unlock -n default --password $(WALLET_PWD)
