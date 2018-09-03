@@ -9,6 +9,15 @@ endif()
 set(BUILD_DIR build/main)
 set(SRC_DIR src)
 
+# Set a normal, cache, or environment variable to a given value
+set( CMAKE_CXX_STANDARD 14 )
+set( CMAKE_CXX_EXTENSIONS ON )
+set( CXX_STANDARD_REQUIRED ON)
+set( CLI_CLIENT_EXECUTABLE_NAME cleos )
+set( GUI_CLIENT_EXECUTABLE_NAME eosio )
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS "ON")
+
 # executables output directory
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${BUILD_DIR})
 
