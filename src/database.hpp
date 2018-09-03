@@ -8,6 +8,7 @@
 #include <eosiolib/crypto.h>
 #include <eosiolib/fixed_key.hpp>
 #include <eosiolib/asset.hpp>
+#include <eosiolib/multi_index.hpp>
 #include <string>
 #include <vector>
 
