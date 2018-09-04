@@ -1,14 +1,10 @@
-/build
-/CMakeFiles
-/CMakeCache.txt
-/cmake_install.cmake
-/Makefile
-/*.cmake
-**/build
-CMakeFiles
-CMakeCache.txt
-cmake_install.cmake
-**/.idea
-**/node_modules
-/zap.cbp
-/cmake-build-debug
+# Ignore everything
+*
+
+# Except these files...
+!.gitignore
+!makefile.self
+!CMakeLists.txt
+!package.json
+!src
+!test
