@@ -1,5 +1,20 @@
 const Eos = require('eosjs');
+const path = require('path');
+const Sleep = require('sleep');
 const spawn = require('child_process').spawn;
+const execSync = require('child_process').execSync;
+
+
+const PROJECT_PATH = path.join(__dirname + '/..');
+
+//TODO: receive dynamically
+const NODEOS_PATH = '/home/kostya/blockchain/eos/build/programs/nodeos';
+
+// Params for waiting node startup
+// Can be different for different hardware configurations
+const STARTUP_BLOCK = 3;
+const STARTUP_REQUESTS_DELAY = 100;
+const STARTUP_TIMEOUT = 5000;
 
 // helper function to promisify event
 function waitEvent(event, type) {
@@ -13,31 +28,60 @@ function waitEvent(event, type) {
     });
 }
 
-class Node {
-    constructor(verbose) {
-        this.verbose = verbose;
-        this.NODEOS_PATH = '/home/kostya/blockchain/eos/build/programs/nodeos';
+function checkTimeout(startTime, timeout) {
+    let currentTime = new Date();
+    let timeoutException = 'Timeout exception.';
+    if (startTime.getTime() - currentTime.getTime() > timeout) {
+        throw timeoutException
+    }
+}
 
-        this.ACC_TEST_PRIV_KEY = '5JesJCSXGys63ycUGqUiNRkAK6MfrqtLyhGDSJXg2kPunWgWbj3';
-        this.ACC_OWNER_PRIV_KEY = '5K8eg5nreako7Q2gb1ASML4MRkXFEX9DCa1jhft2hQcu4texkpB';
+// TODO: Generate keys and use eosjs to setup initial state of node
+class Node {
+    constructor(verbose, recompile) {
+        this.verbose = verbose;
+        this.recompile = recompile;
+
+        this.ACC_TEST_PRIV_KEY = '5KfFufnUThaEeqsSeMPt27Poan5g8LUaEorsC1hHm1FgNJfr3sX';
+        this.ACC_OWNER_PRIV_KEY = '5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3';
 
         this.eos_test_config = {
             chainId: null, // 32 byte (64 char) hex string
-            keyProvider: [this.ACC_TEST_PRIV_KEY, this.ACC_OWNER_PRIV_KEY], // WIF string or array of keys..
+            keyProvider: [this.ACC_OWNER_PRIV_KEY, this.ACC_TEST_PRIV_KEY], // WIF string or array of keys..
             httpEndpoint: 'http://127.0.0.1:8888',
             expireInSeconds: 60,
             broadcast: true,
-            verbose: false, // API activity
+            verbose: this.verbose, // API activity
             sign: true
         };
 
         this.isRunning = false;
-        this.eos = null;
     }
 
-    async initAccounts() {
-        let block = await this.eos.getBlock(1);
-        console.log(JSON.stringify(block));
+    async _waitNodeStartup(timeout) {
+        // wait for block production
+        let startTime = new Date();
+        while (true) {
+            let eos = Eos(this.eos_test_config);
+            try {
+                let res = await eos.getInfo({});
+                if (res.head_block_producer) {
+                    while (true) {
+                        try {
+                            await eos.getBlock(STARTUP_BLOCK);
+                            break;
+                        } catch (e) {
+                            Sleep.msleep(STARTUP_REQUESTS_DELAY);
+                            checkTimeout(startTime, timeout);
+                        }
+                    }
+                    break;
+                }
+            } catch (e) {
+                Sleep.msleep(STARTUP_REQUESTS_DELAY);
+                checkTimeout(startTime, timeout);
+            }
+        }
     }
 
     async run() {
@@ -46,16 +90,13 @@ class Node {
         }
 
         // use spawn function because nodeos has infinity output
-        this.instance = spawn(this.NODEOS_PATH + '/nodeos', ['--contracts-console', '--delete-all-blocks', '--access-control-allow-origin=*']);
+        this.instance = spawn(NODEOS_PATH + '/nodeos', ['--contracts-console', '--delete-all-blocks', '--access-control-allow-origin=*']);
 
-        // read nodeos output by lines using waitEvent function
-        // read until nodeos doesn't produce blocks
-        // after nodeos starts to produce blocks we can connect to node using eosjs
+        // wait until node is running
         while (this.isRunning === false) {
             let message = (await waitEvent(this.instance.stderr, 'data')).toString();
-            if (this.isRunning === false && message.indexOf('produce_block') > -1) {
+            if (this.isRunning === false) {
                 this.isRunning = true;
-                this.eos = Eos(this.eos_test_config);
             }
         }
 
@@ -70,6 +111,33 @@ class Node {
 
             if (this.verbose) console.log('Eos node killed.');
         }
+    }
+
+    async init() {
+        if (!this.isRunning) {
+            throw 'Eos node must running to setup initial state.';
+        }
+
+        await this._waitNodeStartup(STARTUP_TIMEOUT);
+
+        let options = {cwd: PROJECT_PATH.toString(), /*disable output*/ stdio: 'pipe'};
+        if (this.recompile) {
+            execSync('make -f makefile.self lcompile', options);
+            execSync('make -f makefile.self generate_abi', options);
+        }
+        execSync('make -f makefile.self init_accs', options);
+        execSync('make -f makefile.self deploy_all', options);
+        execSync('make -f makefile.self grant_permissions', options);
+        execSync('make -f makefile.self issue_tokens_for_testacc', options);
+    }
+
+    async connect() {
+        if (!this.isRunning) {
+            throw 'Eos node must running for establishing connection.';
+        }
+
+        await this._waitNodeStartup(STARTUP_TIMEOUT);
+        return Eos(this.eos_test_config);
     }
 
     async restart() {

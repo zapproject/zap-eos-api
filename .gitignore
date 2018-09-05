@@ -3,6 +3,7 @@
 
 # Except these files...
 !.gitignore
+!readme.md
 !makefile.self
 !CMakeLists.txt
 !package.json

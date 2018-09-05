@@ -1,22 +1,22 @@
 #MUST BE YOUR WALLET PASSWORDS
 #PASSWORD FOR WALLET THAT WILL DEPLOY CONTRACTS
-WALLET_PWD = PW5KDk8rKpGrNbVZbt6PG3HEWGHAqb5mj13qRNHemvCNaysFtN78n
+WALLET_PWD = PW5KG8hve1T9HyfWUJJC5E5Q2vNSXEeQiLs6WpphFbwf2EAuAXPYW
 #PUBLIC KEY OF ACCOUNTS FOR WALLET ABOVE
-PUBLIC_KEY = EOS7yo4KpfPVGrigndBv9AHP4KMAkpAAUA93RUozZFMLp8eoX56BG
+PUBLIC_KEY = EOS7Gj5sWupAArPgqTvM1B3cjENqbh2LeWMJi5z7byTiiy6hR6XRQ
 #ACCOUNTS THAT USES PUBLIC KEY ABOVE
 MAIN_ACC = zap.main
 TOKEN_ACC = zap.token
 
 #PASSWORD FOR WALLET THAT WILL CREATE PROVIDER AND CALL BOND/UNBOND
-TEST_WALLET_PWD = PW5Kkwogcis8LiiDbF5hZXKBzSHiKoYhF4FAwkZzKsoM6sEJL3jhA
+TEST_WALLET_PWD = PW5KDd3voZ78YAECFSbz1E5KQA1xS8GNAmTqQvicU81nmii7NstPA
 #PUBLIC KEY OF ACCOUNTS FOR WALLET ABOVE
-PUBLIC_KEY_USER_ACCS = EOS84zFiw5gCEhjtsDipPKHx3b89oZ5dk1Bu1CQ3RK9PCVMiQZCzk
+PUBLIC_KEY_USER_ACCS = EOS8LV5e4oGMFwKkWJyfffdgYaD2JPbhmBcaLd4kkE3zTjr3hxk2C
 #ACCOUNTS THAT USES PUBLIC KEY ABOVE
 TEST_PROVIDER_ACC = provider
 TEST_ACC = kostya.s
 
 #PROJEC DIRECTORY
-PROJECT_DIR = /home/kostya/blockchain/zap-eos-api
+PROJECT_DIR = /home/kostya/blockchain/zap_eos_contracts
 #EOS SOURCES DIRECTORY (SOURCEC MUST BE BUILDED)
 EOS_DIR = /home/kostya/blockchain/eos
 #DIRECTORY OF DEFAULT TOKEN CONTRACT
@@ -82,7 +82,7 @@ grant_permissions:
 	-cleos wallet unlock -n default --password $(WALLET_PWD)
 	-cleos wallet unlock -n test --password $(TEST_WALLET_PWD)
 	cleos set account permission $(TEST_ACC) active '{"threshold": 1,"keys": [{"key": "EOS8LV5e4oGMFwKkWJyfffdgYaD2JPbhmBcaLd4kkE3zTjr3hxk2C","weight": 1}],"accounts": [{"permission":{"actor":"zap.main","permission":"eosio.code"},"weight":1}]}' owner -p $(TEST_ACC)
-	cleos set account permission $(MAIN_ACC) active '{"threshold": 1,"keys": [{"key": "EOS7jEmggyJqyKitbsaTYELQCRN71jAhmhwX1Zv89NFZLzaKfrX7X","weight": 1}],"accounts": [{"permission":{"actor":"zap.main","permission":"eosio.code"},"weight":1}]}' owner -p $(MAIN_ACC)
+	cleos set account permission $(MAIN_ACC) active '{"threshold": 1,"keys": [{"key": "EOS7Gj5sWupAArPgqTvM1B3cjENqbh2LeWMJi5z7byTiiy6hR6XRQ","weight": 1}],"accounts": [{"permission":{"actor":"zap.main","permission":"eosio.code"},"weight":1}]}' owner -p $(MAIN_ACC)
 
 issue_tokens_for_testacc: 
 	-cleos wallet unlock -n default --password $(WALLET_PWD)
