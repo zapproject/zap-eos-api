@@ -94,7 +94,7 @@ class Node {
 
         // wait until node is running
         while (this.isRunning === false) {
-            let message = (await waitEvent(this.instance.stderr, 'data')).toString();
+            await waitEvent(this.instance.stderr, 'data');
             if (this.isRunning === false) {
                 this.isRunning = true;
             }
