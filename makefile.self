@@ -16,8 +16,8 @@ TEST_PROVIDER_ACC = provider
 TEST_ACC = kostya.s
 
 #PROJEC DIRECTORY
-PROJECT_DIR = /home/kostya/blockchain/zap_eos_contracts
-#EOS SOURCES DIRECTORY (SOURCEC MUST BE BUILDED)
+PROJECT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
+#EOS SOURCES DIRECTORY (SOURCES MUST BE BUILDED)
 EOS_DIR = /home/kostya/blockchain/eos
 #DIRECTORY OF DEFAULT TOKEN CONTRACT
 TOKEN_DIR = $(EOS_DIR)/build/contracts/eosio.token

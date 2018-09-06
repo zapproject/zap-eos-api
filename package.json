@@ -7,9 +7,11 @@
     "test": "test"
   },
   "dependencies": {
+    "binaryen": "^37.0.0",
     "chai": "^4.1.2",
     "chai-as-promised": "^7.1.1",
     "eosjs": "^16.0.6",
+    "eosjs-ecc": "^4.0.4",
     "mocha": "^5.2.0",
     "sleep": "^5.2.3"
   },

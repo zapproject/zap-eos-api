@@ -14,7 +14,7 @@ set(SRC_DIR src)
 # executables output directory
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${BUILD_DIR})
 
-# append the path to the module to include
+# append the path receiver the module receiver include
 list(APPEND CMAKE_MODULE_PATH ${EOSIO_WASMSDK_ROOT}/lib/cmake)
 
 # include the toolchain cmake
@@ -23,4 +23,4 @@ include(${EOSIO_WASMSDK_ROOT}/lib/cmake/EosioWasmToolchain.cmake)
 include_directories(${SRC_DIR})
 
 
-add_executable(main.wast ${SRC_DIR}/main.cpp)
+add_executable(main.wasm ${SRC_DIR}/main.cpp)
