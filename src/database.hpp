@@ -112,9 +112,9 @@ namespace db {
         EOSLIB_SERIALIZE(issued, (endpointid)(dots))
     };
 
-    //@abi table query_data i64
+    //@abi table qdata i64
     //Table to store user queries
-    struct query_data {
+    struct qdata {
         uint64_t id;
         account_name provider;
         account_name subscriber;
@@ -124,7 +124,7 @@ namespace db {
 
         uint64_t primary_key() const { return id; }
 
-        EOSLIB_SERIALIZE(query_data, (id)(provider)(subscriber)(endpoint)(data)(onchain))
+        EOSLIB_SERIALIZE(qdata, (id)(provider)(subscriber)(endpoint)(data)(onchain))
     };
 
     struct subscription {
@@ -150,7 +150,7 @@ namespace db {
                 indexed_by<N(byhash), const_mem_fun<holder, key256, &holder::get_hash>>
             > holderIndex;
     typedef multi_index<N(issued), issued> issuedIndex;
-    typedef multi_index<N(query_data), query_data> queryIndex;
+    typedef multi_index<N(qdata), qdata> queryIndex;
     typedef multi_index<N(subscription), subscription,
                 indexed_by<N(byhash), const_mem_fun<subscription, key256, &subscription::get_hash>>
             > subscriptionIndex;

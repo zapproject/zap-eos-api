@@ -23,6 +23,7 @@ lcompile:
 # SMART CONTRACTS COMMANDS #
 #                          #
 
+#TODO: Remove after tests
 grant_permissions:
 	-cleos wallet unlock -n default --password $(WALLET_PWD)
 	-cleos wallet unlock -n test --password $(TEST_WALLET_PWD)

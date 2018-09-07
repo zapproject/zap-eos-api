@@ -1,11 +1,9 @@
-const Eos = require('eosjs');
 const path = require('path');
-const Sleep = require('sleep');
-const Account = require('./account.js');
-const Deployer = require('./deployer.js');
-const Transaction = require('./transaction.js');
+const Node = require('./eos/eosnode.js');
+const Account = require('./eos/account.js');
+const Deployer = require('./eos/deployer.js');
+const Transaction = require('./eos/transaction.js');
 
-const spawn = require('child_process').spawn;
 const execSync = require('child_process').execSync;
 
 
@@ -16,31 +14,9 @@ const NODEOS_PATH = '/home/kostya/blockchain/eos/build/programs/nodeos';
 const EOS_DIR = '/home/kostya/blockchain/eos';
 const TOKEN_DIR = EOS_DIR + '/build/contracts/eosio.token';
 
-// Params for waiting node startup
-// Can be different for different hardware configurations
-const STARTUP_BLOCK = 3;
-const STARTUP_REQUESTS_DELAY = 100;
-const STARTUP_TIMEOUT = 5000;
+const ACC_TEST_PRIV_KEY = '5KfFufnUThaEeqsSeMPt27Poan5g8LUaEorsC1hHm1FgNJfr3sX';
+const ACC_OWNER_PRIV_KEY = '5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3';
 
-// helper function receiver promisify event
-function waitEvent(event, type) {
-    return new Promise(function(resolve, reject) {
-        function listener(data) {
-            event.removeListener(type, listener);
-            resolve(data);
-        }
-
-        event.on(type, listener);
-    });
-}
-
-function checkTimeout(startTime, timeout) {
-    let currentTime = new Date();
-    let timeoutException = new Error('Timeout exception.');
-    if (startTime.getTime() - currentTime.getTime() > timeout) {
-        throw timeoutException
-    }
-}
 
 function findElement(array, field, value) {
     for (let i in array) {
@@ -55,111 +31,32 @@ function findElement(array, field, value) {
 }
 
 
-class Node {
+class TestNode extends Node {
     constructor(verbose, recompile) {
-        this.verbose = verbose;
+        super({verbose: verbose, nodeos_path: NODEOS_PATH, key_provider: [ACC_TEST_PRIV_KEY, ACC_OWNER_PRIV_KEY]});
+
         this.recompile = recompile;
 
-        this.ACC_TEST_PRIV_KEY = '5KfFufnUThaEeqsSeMPt27Poan5g8LUaEorsC1hHm1FgNJfr3sX';
-        this.ACC_OWNER_PRIV_KEY = '5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3';
-
-        this.account_user = new Account({account_name: 'user'}).fromPrivateKey({private_key: this.ACC_TEST_PRIV_KEY});
-        this.account_provider = new Account({account_name: 'provider'}).fromPrivateKey({private_key: this.ACC_TEST_PRIV_KEY});
-        this.account_token = new Account({account_name: 'zap.token'}).fromPrivateKey({private_key: this.ACC_OWNER_PRIV_KEY});
-        this.account_main = new Account({account_name: 'zap.main'}).fromPrivateKey({private_key: this.ACC_OWNER_PRIV_KEY});
-
-        this.eos_test_config = {
-            chainId: null, // 32 byte (64 char) hex string
-            keyProvider: [this.ACC_OWNER_PRIV_KEY, this.ACC_TEST_PRIV_KEY], // WIF string or array of keys..
-            httpEndpoint: 'http://127.0.0.1:8888',
-            expireInSeconds: 60,
-            broadcast: true,
-            verbose: this.verbose, // API activity
-            sign: true
-        };
-
-        this.running = false;
+        this.account_user = new Account({account_name: 'user'}).fromPrivateKey({private_key: ACC_TEST_PRIV_KEY});
+        this.account_provider = new Account({account_name: 'provider'}).fromPrivateKey({private_key: ACC_TEST_PRIV_KEY});
+        this.account_token = new Account({account_name: 'zap.token'}).fromPrivateKey({private_key: ACC_OWNER_PRIV_KEY});
+        this.account_main = new Account({account_name: 'zap.main'}).fromPrivateKey({private_key: ACC_OWNER_PRIV_KEY});
     }
 
-    async _waitNodeStartup(timeout) {
-        // wait for block production
-        let startTime = new Date();
-        while (true) {
-            let eos = Eos(this.eos_test_config);
-            try {
-                let res = await eos.getInfo({});
-                if (res.head_block_producer) {
-                    while (true) {
-                        try {
-                            await eos.getBlock(STARTUP_BLOCK);
-                            break;
-                        } catch (e) {
-                            Sleep.msleep(STARTUP_REQUESTS_DELAY);
-                            checkTimeout(startTime, timeout);
-                        }
-                    }
-                    break;
-                }
-            } catch (e) {
-                Sleep.msleep(STARTUP_REQUESTS_DELAY);
-                checkTimeout(startTime, timeout);
-            }
-        }
-    }
-
-    async run() {
-        if (this.instance) {
-            throw new Error('Test EOS node is already running.');
-        }
-
-        // use spawn function because nodeos has infinity output
-        this.instance = spawn(NODEOS_PATH + '/nodeos', ['--contracts-console', '--delete-all-blocks', '--access-control-allow-origin=*']);
-
-        // wait until node is running
-        while (this.running === false) {
-            await waitEvent(this.instance.stderr, 'data');
-            if (this.running === false) {
-                this.running = true;
-            }
-        }
-
-        if (this.verbose) console.log('Eos node is running.')
-    }
-
-    kill() {
-        if (this.instance) {
-            this.instance.kill();
-            this.instance = null;
-            this.running = false;
-
-            if (this.verbose) console.log('Eos node killed.');
-        }
-    }
-
-    async init(useMakefile) {
+    async init() {
         if (!this.running) {
             throw new Error('Eos node must running receiver setup initial state.');
         }
 
-        await this._waitNodeStartup(STARTUP_TIMEOUT);
-
         if (this.recompile) {
-           await this.compile();
+            await this.compile();
         }
 
-        if (useMakefile) {
-            let options = {cwd: PROJECT_PATH.toString(), /*disable output*/ stdio: 'pipe'};
-            execSync('make -f makefile.self init_accs', options);
-            execSync('make -f makefile.self deploy_all', options);
-            execSync('make -f makefile.self grant_permissions', options);
-            execSync('make -f makefile.self issue_tokens_for_testacc', options);
-        } else {
-            let eos = await this.connect();
-            await this.registerAccounts(eos);
-            await this.deploy(eos);
-            await this.issueTokens(eos);
-            await this.grantPermissions(eos);
-        }
+        let eos = await this.connect();
+        await this.registerAccounts(eos);
+        await this.deploy(eos);
+        await this.issueTokens(eos);
+        await this.grantPermissions(eos);
     }
 
     async compile() {
@@ -252,19 +149,6 @@ class Node {
             .execute(eos);
     }
 
-    async connect() {
-        if (!this.running) {
-            throw new Error('Eos node must running for establishing connection.');
-        }
-
-        await this._waitNodeStartup(STARTUP_TIMEOUT);
-        return Eos(this.eos_test_config);
-    }
-
-    async restart() {
-        this.kill();
-        await this.run();
-    }
 
     getAccounts() {
         return {
@@ -276,4 +160,4 @@ class Node {
     }
 }
 
-module.exports = Node;
+module.exports = TestNode;

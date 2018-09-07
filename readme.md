@@ -12,6 +12,7 @@ Software versions
  - Mocha
 
  Commands
+ - to test contracts manually run '*node*' and include environment.js '*env = require('./test/environment.js')*'
  - to run tests use '*npm test*'
  - to compile use '*cmake ./*' then '*make all*' or '*make -f makefile.self lcompile*'
  - to generate abi use '*make -f makefile.self generate_abi*'
