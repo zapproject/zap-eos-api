@@ -86,7 +86,7 @@ class TestNode extends Node {
         );
 
         let createTokenTransaction = new Transaction()
-            .sender(this.account_token)
+            .sender(this.account_token, 'active')
             .receiver(this.account_token)
             .action('create')
             .data({issuer: this.account_token.name, maximum_supply: '1000000000 TST'})
@@ -142,7 +142,7 @@ class TestNode extends Node {
 
     async issueTokens(eos) {
         return await new Transaction()
-            .sender(this.account_token)
+            .sender(this.account_token, 'active')
             .receiver(this.account_token)
             .action('issue')
             .data({to: this.account_user.name, quantity: '1000000 TST', memo: ''})

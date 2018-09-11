@@ -89,7 +89,7 @@ describe('Main', function () {
             let transferTransaction = new Transaction()
                 .receiver(accounts.token)
                 .action('transfer')
-                .auth(accounts.user.getAuth('active'))
+                .sender(accounts.user, 'active')
                 .data({from: accounts.user.name, to: accounts.provider.name, quantity: '7 TST', memo: 'hi'})
                 .build();
 
@@ -170,6 +170,70 @@ describe('Main', function () {
     describe('Contracts', function () {
         let node = new Node(false, false);
 
+        function createNewProviderTransaction(title, key) {
+            return new Transaction()
+                .sender(node.getAccounts().provider, 'active')
+                .receiver(node.getAccounts().main)
+                .action('newprovider')
+                .data({provider: node.getAccounts().provider.name, title: title, public_key: key});
+        }
+
+        function createAddEndpointTransaction(endpoint) {
+            return new Transaction()
+                .sender(node.getAccounts().provider, 'active')
+                .receiver(node.getAccounts().main)
+                .action('addendpoint')
+                .data({
+                    provider: node.getAccounts().provider.name,
+                    specifier: endpoint,
+                    constants: [200, 3, 0],
+                    parts: [0, 1000000],
+                    dividers: [1]
+                });
+        }
+
+        function createBondTransaction(endpoint, amount) {
+            if (amount >= 0) {
+                return new Transaction()
+                    .sender(node.getAccounts().user, 'active')
+                    .receiver(node.getAccounts().main)
+                    .action('bond')
+                    .data({
+                        subscriber: node.getAccounts().user.name,
+                        provider: node.getAccounts().provider.name,
+                        endpoint: endpoint,
+                        dots: amount
+                    });
+            } else {
+                return new Transaction()
+                    .sender(node.getAccounts().user, 'active')
+                    .receiver(node.getAccounts().main)
+                    .action('unbond')
+                    .data({
+                        subscriber: node.getAccounts().user.name,
+                        provider: node.getAccounts().provider.name,
+                        endpoint: endpoint,
+                        dots: amount * -1
+                    })
+            }
+        }
+
+        function createQueryTransaction(endpoint, query, onchain_p, onchain_s) {
+            return new Transaction()
+                .sender(node.getAccounts().user, 'active')
+                .receiver(node.getAccounts().main)
+                .action('query')
+                .data({
+                    subscriber: node.getAccounts().user.name,
+                    provider: node.getAccounts().provider.name,
+                    endpoint: endpoint,
+                    query: query,
+                    onchain_provider: onchain_p ? 1 : 0,
+                    onchain_subscriber: onchain_s ? 1 : 0
+                });
+
+        }
+
         beforeEach(function (done) {
             this.timeout(30000);
             configureEnvironment(async () => {
@@ -187,7 +251,7 @@ describe('Main', function () {
             let eos = await node.connect();
 
             await new Transaction()
-                .sender(node.getAccounts().user)
+                .sender(node.getAccounts().user, 'active')
                 .receiver(node.getAccounts().token)
                 .action('transfer')
                 .data({
@@ -197,6 +261,7 @@ describe('Main', function () {
                     memo: 'hi'
                 })
                 .execute(eos);
+
             let tokensAmount = await eos.getCurrencyBalance('zap.token', 'provider', 'TST');
             await expect(tokensAmount[0].toString()).to.be.equal('7 TST');
         });
@@ -204,13 +269,7 @@ describe('Main', function () {
         it('#newprovider()', async () => {
             let eos = await node.connect();
 
-            await new Transaction()
-                .sender(node.getAccounts().provider)
-                .receiver(node.getAccounts().main)
-                .action('newprovider')
-                .data({provider: node.getAccounts().provider.name, title: 'test', public_key: 1})
-                .execute(eos);
-
+            await createNewProviderTransaction('test', 1).execute(eos);
 
             let res = await getRowsByPrimaryKey(eos, node, {scope: node.getAccounts().main.name, table_name: 'provider', table_key: 'provider'});
 
@@ -220,23 +279,8 @@ describe('Main', function () {
         it('#addendpoint()', async () => {
             let eos = await node.connect();
 
-            await new Transaction()
-                .sender(node.getAccounts().provider)
-                .receiver(node.getAccounts().main)
-                .action('newprovider')
-                .data({provider: node.getAccounts().provider.name, title: 'test', public_key: 1})
-                .execute(eos);
-            await new Transaction()
-                .sender(node.getAccounts().provider)
-                .receiver(node.getAccounts().main)
-                .action('addendpoint')
-                .data({
-                    provider: node.getAccounts().provider.name,
-                    specifier: 'test_endpoint',
-                    constants: [200, 3, 0],
-                    parts: [0, 1000000],
-                    dividers: [1]
-                })
+            await createNewProviderTransaction('test', 1)
+                .merge(createAddEndpointTransaction('test_endpoint'))
                 .execute(eos);
 
             let res = await getRowsByPrimaryKey(eos, node, {scope: node.getAccounts().provider.name, table_name: 'endpoint', table_key: 'id'});
@@ -246,34 +290,10 @@ describe('Main', function () {
 
         it('#bond()', async () => {
             let eos = await node.connect();
-            await new Transaction()
-                .sender(node.getAccounts().provider)
-                .receiver(node.getAccounts().main)
-                .action('newprovider')
-                .data({provider: node.getAccounts().provider.name, title: 'test', public_key: 1})
-                .execute(eos);
-            await new Transaction()
-                .sender(node.getAccounts().provider)
-                .receiver(node.getAccounts().main)
-                .action('addendpoint')
-                .data({
-                    provider: node.getAccounts().provider.name,
-                    specifier: 'test_endpoint',
-                    constants: [200, 3, 0],
-                    parts: [0, 1000000],
-                    dividers: [1]
-                })
-                .execute(eos);
-            await new Transaction()
-                .sender(node.getAccounts().user)
-                .receiver(node.getAccounts().main)
-                .action('bond')
-                .data({
-                    subscriber: node.getAccounts().user.name,
-                    provider: node.getAccounts().provider.name,
-                    endpoint: 'test_endpoint',
-                    dots: 1
-                })
+
+            await createNewProviderTransaction('test', 1)
+                .merge(createAddEndpointTransaction('test_endpoint'))
+                .merge(createBondTransaction('test_endpoint', 1))
                 .execute(eos);
 
             let issued = await getRowsByPrimaryKey(eos, node, {scope: node.getAccounts().provider.name, table_name: 'issued', table_key: 'endpointid'});
@@ -287,45 +307,10 @@ describe('Main', function () {
         it('#unbond()', async () => {
             let eos = await node.connect();
 
-            await new Transaction()
-                .sender(node.getAccounts().provider)
-                .receiver(node.getAccounts().main)
-                .action('newprovider')
-                .data({provider: node.getAccounts().provider.name, title: 'test', public_key: 1})
-                .execute(eos);
-            await new Transaction()
-                .sender(node.getAccounts().provider)
-                .receiver(node.getAccounts().main)
-                .action('addendpoint')
-                .data({
-                    provider: node.getAccounts().provider.name,
-                    specifier: 'test_endpoint',
-                    constants: [200, 3, 0],
-                    parts: [0, 1000000],
-                    dividers: [1]
-                })
-                .execute(eos);
-            await new Transaction()
-                .sender(node.getAccounts().user)
-                .receiver(node.getAccounts().main)
-                .action('bond')
-                .data({
-                    subscriber: node.getAccounts().user.name,
-                    provider: node.getAccounts().provider.name,
-                    endpoint: 'test_endpoint',
-                    dots: 1
-                })
-                .execute(eos);
-            await new Transaction()
-                .sender(node.getAccounts().user)
-                .receiver(node.getAccounts().main)
-                .action('unbond')
-                .data({
-                    subscriber: node.getAccounts().user.name,
-                    provider: node.getAccounts().provider.name,
-                    endpoint: 'test_endpoint',
-                    dots: 1
-                })
+            await createNewProviderTransaction('test', 1)
+                .merge(createAddEndpointTransaction('test_endpoint'))
+                .merge(createBondTransaction('test_endpoint', 1))
+                .merge(createBondTransaction('test_endpoint', -1))
                 .execute(eos);
 
             let issued = await getRowsByPrimaryKey(eos, node, {scope: node.getAccounts().provider.name, table_name: 'issued', table_key: 'endpointid'});
@@ -337,53 +322,16 @@ describe('Main', function () {
 
         it('#query()', async () => {
             let eos = await node.connect();
-            await new Transaction()
-                .sender(node.getAccounts().provider)
-                .receiver(node.getAccounts().main)
-                .action('newprovider')
-                .data({provider: node.getAccounts().provider.name, title: 'test', public_key: 1})
-                .execute(eos);
-            await new Transaction()
-                .sender(node.getAccounts().provider)
-                .receiver(node.getAccounts().main)
-                .action('addendpoint')
-                .data({
-                    provider: node.getAccounts().provider.name,
-                    specifier: 'test_endpoint',
-                    constants: [200, 3, 0],
-                    parts: [0, 1000000],
-                    dividers: [1]
-                })
-                .execute(eos);
-            await new Transaction()
-                .sender(node.getAccounts().user)
-                .receiver(node.getAccounts().main)
-                .action('bond')
-                .data({
-                    subscriber: node.getAccounts().user.name,
-                    provider: node.getAccounts().provider.name,
-                    endpoint: 'test_endpoint',
-                    dots: 1
-                })
-                .execute(eos);
-            await new Transaction()
-                .sender(node.getAccounts().user)
-                .receiver(node.getAccounts().main)
-                .action('query')
-                .data({
-                    subscriber: node.getAccounts().user.name,
-                    provider: node.getAccounts().provider.name,
-                    endpoint: 'test_endpoint',
-                    query: 'query',
-                    onchain_provider: 0,
-                    onchain_subscriber: 0
-                })
+            await createNewProviderTransaction('test', 1)
+                .merge(createAddEndpointTransaction('test_endpoint'))
+                .merge(createBondTransaction('test_endpoint', 1))
+                .merge(createQueryTransaction('test_endpoint', 'q', false, false))
                 .execute(eos);
 
             let qdata = await getRowsByPrimaryKey(eos, node, {scope: node.getAccounts().main.name, table_name: 'qdata', table_key: 'id'});
             let holder = await getRowsByPrimaryKey(eos, node, {scope: node.getAccounts().user.name, table_name: 'holder', table_key: 'provider'});
 
-            await expect(qdata.rows[0].data).to.be.equal('query');
+            await expect(qdata.rows[0].data).to.be.equal('q');
             await expect(holder.rows[0].escrow).to.be.equal(1);
             await expect(holder.rows[0].dots).to.be.equal(0);
         });
