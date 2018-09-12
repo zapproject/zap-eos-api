@@ -9,7 +9,7 @@ class Deployer {
     }
 
     from(account) {
-        if (!(account instanceof Account)) {
+        if (!account.isAccount) {
             throw new Error('Account must be instance of account.js');
         }
 
@@ -30,7 +30,7 @@ class Deployer {
     }
 
     afterDeploy(transaction) {
-        if (!(transaction instanceof Transaction)) {
+        if (!transaction.isTransaction) {
             throw new Error('Transaction must be instance of transaction.js');
         }
 
@@ -40,7 +40,7 @@ class Deployer {
     }
 
     beforeDeploy(transaction) {
-        if (!(transaction instanceof Transaction)) {
+        if (!transaction.isTransaction) {
             throw new Error('Transaction must be instance of transaction.js');
         }
 

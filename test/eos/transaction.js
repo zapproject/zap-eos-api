@@ -26,23 +26,24 @@ class Transaction {
 
     constructor() {
         this.actions = [{}];
+        this.isTransaction = true;
     }
 
     sender(account) {
-        if (!(account instanceof Account)) {
+        if (!account.isAccount) {
             throw new Error('Account must be instance of account.js');
         }
 
-        this.actions[0]['authorization'][0] = {
+        this.actions[0].authorization = [{
             actor: account.name,
             permission: account.default_auth
-        };
+        }];
 
         return this;
     }
 
     receiver(account) {
-        if (!(account instanceof Account)) {
+        if (!account.isAccount) {
             throw new Error('Account must be instance of account.js');
         }
 
@@ -50,18 +51,18 @@ class Transaction {
         return this;
     }
 
-    action({action}) {
+    action(action) {
         this.actions[0].name = action;
         return this;
     }
 
-    data({data}) {
+    data(data) {
         this.actions[0].data = data;
         return this;
     }
 
     merge(transaction) {
-        if (!(transaction instanceof Transaction)) {
+        if (!transaction.isTransaction) {
             throw new Error('Account must be instance of account.js');
         }
 
@@ -70,8 +71,9 @@ class Transaction {
                 this.actions.push(transaction.actions[i]);
             }
         }
-    }
 
+        return this;
+    }
 
     build() {
         return { actions: this.actions };

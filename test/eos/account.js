@@ -4,19 +4,22 @@ class Account {
     constructor({account_name}) {
         this._name = account_name;
         this._default_auth = 'active';
+        this.isAccount = true;
     }
 
-    fromPrivateKey(private_key) {
+    fromPrivateKey({private_key}) {
         if (!eos_ecc.isValidPrivate(private_key)) {
             throw new Error("Private key is invalid.");
         }
 
         this.private_key = private_key;
         this.public_key = eos_ecc.privateToPublic(this.private_key);
+
+        return this;
     }
 
     async register(eos) {
-        eos.transaction(tr => {
+        return await eos.transaction(tr => {
             tr.newaccount({
                 creator: 'eosio',
                 name: this.name,

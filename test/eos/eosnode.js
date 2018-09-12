@@ -2,6 +2,10 @@ const Sleep = require('sleep');
 const Eos = require('eosjs');
 const spawn = require('child_process').spawn;
 
+const STARTUP_TIMEOUT = 30000;
+const STARTUP_REQUESTS_DELAY = 100;
+const STARTUP_BLOCK = 3;
+
 function waitEvent(event, type) {
     return new Promise(function(resolve, reject) {
         function listener(data) {
@@ -22,10 +26,10 @@ function checkTimeout(startTime, timeout) {
 
 
 class Node {
-    constructor({verbose, keyProvider}) {
+    constructor({verbose, key_provider, nodeos_path}) {
         this.eos_test_config = {
             chainId: null, // 32 byte (64 char) hex string
-            keyProvider: keyProvider, // WIF string or array of keys..
+            keyProvider: key_provider, // WIF string or array of keys..
             httpEndpoint: 'http://127.0.0.1:8888',
             expireInSeconds: 60,
             broadcast: true,
@@ -36,19 +40,20 @@ class Node {
         this.verbose = verbose;
         this.running = false;
         this.instance = null;
+        this.nodeos_path = nodeos_path;
     }
 
     async _waitNodeStartup(timeout) {
         // wait for block production
         let startTime = new Date();
+        let eos = Eos(this.eos_test_config);
         while (true) {
-            let eos = Eos(this.eos_test_config);
             try {
                 let res = await eos.getInfo({});
                 if (res.head_block_producer) {
                     while (true) {
                         try {
-                            await eos.getBlock(STARTUP_BLOCK);
+                            let res = await eos.getBlock(STARTUP_BLOCK);
                             break;
                         } catch (e) {
                             Sleep.msleep(STARTUP_REQUESTS_DELAY);
@@ -70,7 +75,7 @@ class Node {
         }
 
         // use spawn function because nodeos has infinity output
-        this.instance = spawn(NODEOS_PATH + '/nodeos', ['--contracts-console', '--delete-all-blocks', '--access-control-allow-origin=*']);
+        this.instance = spawn(this.nodeos_path + '/nodeos', ['--contracts-console', '--delete-all-blocks', '--access-control-allow-origin=*']);
 
         // wait until node is running
         while (this.running === false) {

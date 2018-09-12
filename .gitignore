@@ -8,5 +8,6 @@
 !CMakeLists.txt
 !package.json
 !src
-!test
-!test/*
+!test/
+!test/**
+!test/eos/

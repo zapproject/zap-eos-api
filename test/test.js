@@ -98,7 +98,11 @@ describe('Main', function () {
                     {
                         account: accounts.token.name,
                         name: 'transfer',
-                        authorization: [accounts.user.getAuth('active')],
+                        authorization: [{
+                            actor: accounts.user.name,
+                            permission: accounts.user.default_auth
+                        }],
+
                         data: {
                             from: accounts.user.name,
                             to: accounts.provider.name,

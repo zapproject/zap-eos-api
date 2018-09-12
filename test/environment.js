@@ -141,7 +141,7 @@ class TestNode extends Node {
 
     async issueTokens(eos) {
         return await new Transaction()
-            .sender(this.account_token, 'active')
+            .sender(this.account_token)
             .receiver(this.account_token)
             .action('issue')
             .data({to: this.account_user.name, quantity: '1000000 TST', memo: ''})
