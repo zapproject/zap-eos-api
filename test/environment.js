@@ -79,21 +79,20 @@ class TestNode extends Node {
         let results = [];
 
         results.push(
-            await new Deployer({eos: eos, contract_name: 'main', verbose: false})
+            await new Deployer({eos: eos, contract_name: 'main'})
                 .from(this.account_main)
-                .read()
+                .read(PROJECT_PATH + '/build/main')
                 .deploy()
         );
 
         let createTokenTransaction = new Transaction()
-            .sender(this.account_token, 'active')
+            .sender(this.account_token)
             .receiver(this.account_token)
             .action('create')
-            .data({issuer: this.account_token.name, maximum_supply: '1000000000 TST'})
-            .build();
+            .data({issuer: this.account_token.name, maximum_supply: '1000000000 TST'});
 
         results.push(
-            await new Deployer({eos: eos, contract_name: 'eosio.token', verbose: false})
+            await new Deployer({eos: eos, contract_name: 'eosio.token'})
                 .from(this.account_token)
                 .read(TOKEN_DIR)
                 .afterDeploy(createTokenTransaction)
