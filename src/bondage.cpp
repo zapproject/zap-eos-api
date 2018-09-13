@@ -12,6 +12,10 @@ void Bondage::bond(account_name subscriber, account_name provider, std::string e
     auto endpoint_iterator = endpoint_index.find(db::hash(provider, endpoint));
     eosio_assert(endpoint_iterator != endpoint_index.end(), "Endpoint not found.");
     print_f("Endpoint item found, id = %.\n", endpoint_iterator->id);
+
+    if (endpoint_iterator->broker != 0) {
+        eosio_assert(endpoint_iterator->broker == subscriber, "Only broker can bond to this endpoint.");
+    }
  
 
     // Update total issued dots for current endpoint
@@ -44,6 +48,10 @@ void Bondage::unbond(account_name subscriber, account_name provider, std::string
     auto endpoint_index = endpoints.get_index<N(byhash)>();
     auto endpoints_iterator = endpoint_index.find(db::hash(provider, endpoint));
     eosio_assert(endpoints_iterator != endpoint_index.end(), "Endpoint doesn't exists.");
+
+    if (endpoints_iterator->broker != 0) {
+        eosio_assert(endpoints_iterator->broker == subscriber, "Only broker can unbond from this endpoint.");
+    }
 
     auto issued_iterator = issued.find(endpoints_iterator->id);
     eosio_assert(issued_iterator != issued.end(), "Holder doesn't exists.");
