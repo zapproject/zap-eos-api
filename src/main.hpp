@@ -48,6 +48,14 @@ class Main: public eosio::contract {
         //Query provider data
         void respond(account_name responder, uint64_t id, std::string params);
 
+        //@abi action
+        //Buy subscription to provider endpoint
+        void subscribe(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots);
+
+        //@abi action
+        //Remove subscription
+        void unsubscribe(account_name subscriber, account_name provider, std::string endpoint, bool from_sub);
+
 	
         // VIEW METHODS
 
