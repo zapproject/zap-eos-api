@@ -276,7 +276,11 @@ describe('Main', function () {
 
             await createNewProviderTransaction('test', 1).execute(eos);
 
-            let res = await getRowsByPrimaryKey(eos, node, {scope: node.getAccounts().main.name, table_name: 'provider', table_key: 'provider'});
+            let res = await getRowsByPrimaryKey(eos, node, {
+                scope: node.getAccounts().main.name,
+                table_name: 'provider',
+                table_key: 'provider'
+            });
 
             await expect(res.rows[0].title).to.be.equal('test');
         });
@@ -288,7 +292,11 @@ describe('Main', function () {
                 .merge(createAddEndpointTransaction('test_endpoint', ''))
                 .execute(eos);
 
-            let res = await getRowsByPrimaryKey(eos, node, {scope: node.getAccounts().provider.name, table_name: 'endpoint', table_key: 'id'});
+            let res = await getRowsByPrimaryKey(eos, node, {
+                scope: node.getAccounts().provider.name,
+                table_name: 'endpoint',
+                table_key: 'id'
+            });
 
             await expect(res.rows[0].specifier).to.be.equal('test_endpoint');
         });
@@ -301,8 +309,16 @@ describe('Main', function () {
                 .merge(createBondTransaction('test_endpoint', 1))
                 .execute(eos);
 
-            let issued = await getRowsByPrimaryKey(eos, node, {scope: node.getAccounts().provider.name, table_name: 'issued', table_key: 'endpointid'});
-            let holder = await getRowsByPrimaryKey(eos, node, {scope: node.getAccounts().user.name, table_name: 'holder', table_key: 'provider'});
+            let issued = await getRowsByPrimaryKey(eos, node, {
+                scope: node.getAccounts().provider.name,
+                table_name: 'issued',
+                table_key: 'endpointid'
+            });
+            let holder = await getRowsByPrimaryKey(eos, node, {
+                scope: node.getAccounts().user.name,
+                table_name: 'holder',
+                table_key: 'provider'
+            });
 
             await expect(issued.rows[0].dots).to.be.equal(1);
             await expect(holder.rows[0].dots).to.be.equal(1);
@@ -329,8 +345,16 @@ describe('Main', function () {
                 .merge(createBondTransaction('test_endpoint', -1))
                 .execute(eos);
 
-            let issued = await getRowsByPrimaryKey(eos, node, {scope: node.getAccounts().provider.name, table_name: 'issued', table_key: 'endpointid'});
-            let holder = await getRowsByPrimaryKey(eos, node, {scope: node.getAccounts().user.name, table_name: 'holder', table_key: 'provider'});
+            let issued = await getRowsByPrimaryKey(eos, node, {
+                scope: node.getAccounts().provider.name,
+                table_name: 'issued',
+                table_key: 'endpointid'
+            });
+            let holder = await getRowsByPrimaryKey(eos, node, {
+                scope: node.getAccounts().user.name,
+                table_name: 'holder',
+                table_key: 'provider'
+            });
 
             await expect(issued.rows[0].dots).to.be.equal(0);
             await expect(holder.rows[0].dots).to.be.equal(0);
@@ -344,16 +368,47 @@ describe('Main', function () {
                 .merge(createQueryTransaction('test_endpoint', 'q', false, false))
                 .execute(eos);
 
-            let qdata = await getRowsByPrimaryKey(eos, node, {scope: node.getAccounts().main.name, table_name: 'qdata', table_key: 'id'});
-            let holder = await getRowsByPrimaryKey(eos, node, {scope: node.getAccounts().user.name, table_name: 'holder', table_key: 'provider'});
+            let qdata = await getRowsByPrimaryKey(eos, node, {
+                scope: node.getAccounts().main.name,
+                table_name: 'qdata',
+                table_key: 'id'
+            });
+            let holder = await getRowsByPrimaryKey(eos, node, {
+                scope: node.getAccounts().user.name,
+                table_name: 'holder',
+                table_key: 'provider'
+            });
 
             await expect(qdata.rows[0].data).to.be.equal('q');
             await expect(holder.rows[0].escrow).to.be.equal(1);
             await expect(holder.rows[0].dots).to.be.equal(0);
         });
 
+        it('#query_action_listening', async () => {
+            let eos = await node.connect();
+            await createNewProviderTransaction('test', 1)
+                .merge(createAddEndpointTransaction('test_endpoint', ''))
+                .merge(createBondTransaction('test_endpoint', 1))
+                .merge(createQueryTransaction('test_endpoint', 'q', false, false))
+                .execute(eos);
+
+            let listener = node.getEventListener();
+
+            let foundQueryData = null;
+
+            await listener.listen(
+                (blockNumber, actions) => {
+                    listener.stopListen();
+                    foundQueryData = actions[0].payload.data;
+                },
+                'zap.main::query'
+            );
+
+            await expect(foundQueryData.query).to.be.equal('q');
+        }).timeout(10000);
+
         after(function () {
             node.kill();
-        })
+        });
     });
 });

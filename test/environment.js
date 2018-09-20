@@ -3,6 +3,7 @@ const Node = require('./eos/eosnode.js');
 const Account = require('./eos/account.js');
 const Deployer = require('./eos/deployer.js');
 const Transaction = require('./eos/transaction.js');
+const EventListener = require('./eos/eventreader.js');
 
 const execSync = require('child_process').execSync;
 
@@ -156,6 +157,10 @@ class TestNode extends Node {
             token: this.account_token,
             main: this.account_main
         };
+    }
+
+    getEventListener() {
+        return new EventListener(this, 1);
     }
 }
 
