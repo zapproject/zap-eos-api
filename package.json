@@ -1,0 +1,33 @@
+{
+  "name": "zap-eos-api",
+  "version": "0.1.0",
+  "description": "Zap EOS smart contracts",
+  "main": "",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {
+    "binaryen": "^37.0.0",
+    "chai": "^4.1.2",
+    "chai-as-promised": "^7.1.1",
+    "demux": "^2.0.0",
+    "demux-eos": "^2.0.0",
+    "eosjs": "^16.0.6",
+    "eosjs-ecc": "^4.0.4",
+    "mocha": "^5.2.0",
+    "sleep": "^5.2.3"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "mocha ./test/test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://git.smartum.pro/Zap/zap-eos-api.git"
+  },
+  "keywords": [
+    "eos"
+  ],
+  "author": "kostya.s@smartum.pro",
+  "license": "ISC"
+}

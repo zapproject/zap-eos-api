@@ -1,10 +1,13 @@
-/build
-/CMakeFiles
-/CMakeCache.txt
-/cmake_install.cmake
-/Makefile
-/*.cmake
-**/build
-CMakeFiles
-CMakeCache.txt
-cmake_install.cmake
+# Ignore everything
+*
+
+# Except these files...
+!.gitignore
+!readme.md
+!makefile.self
+!CMakeLists.txt
+!package.json
+!src
+!test/
+!test/**
+!test/eos/
