@@ -22,7 +22,7 @@ class Main: public eosio::contract {
         //@abi action
         //Add new endpoint for provider
         //<provider> param must be valid account and action sender must have permissions for this acc
-        void addendpoint(account_name provider, std::string specifier, std::vector<int64_t> constants, std::vector<uint64_t> parts, std::vector<uint64_t> dividers);
+        void addendpoint(account_name provider, std::string specifier, std::vector<int64_t> constants, std::vector<uint64_t> parts, std::vector<uint64_t> dividers, account_name broker);
 
         // BONDAGE METHODS
 
@@ -47,6 +47,14 @@ class Main: public eosio::contract {
         //@abi action
         //Query provider data
         void respond(account_name responder, uint64_t id, std::string params);
+
+        //@abi action
+        //Buy subscription to provider endpoint
+        void subscribe(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots);
+
+        //@abi action
+        //Remove subscription
+        void unsubscribe(account_name subscriber, account_name provider, std::string endpoint, bool from_sub);
 
 	
         // VIEW METHODS

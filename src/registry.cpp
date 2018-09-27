@@ -16,7 +16,7 @@ void Registry::newprovider(account_name provider, std::string title, uint64_t ke
     });
 }
 
-void Registry::addendpoint(account_name provider, std::string specifier, std::vector<int64_t> constants, std::vector<uint64_t> parts, std::vector<uint64_t> dividers) { 
+void Registry::addendpoint(account_name provider, std::string specifier, std::vector<int64_t> constants, std::vector<uint64_t> parts, std::vector<uint64_t> dividers, account_name broker) {
     require_auth(provider);
 
     db::providerIndex providers(_self, _self);
@@ -29,14 +29,15 @@ void Registry::addendpoint(account_name provider, std::string specifier, std::ve
     // Check that provider doesn't have this specifier 
     eosio_assert(Registry::validateEndpoint(endpoints, provider, specifier), "Endpoint already exists!");
 
-   
+
     // Save endpoint to multi index storage
     endpoints.emplace(provider, [&](auto& newEndpoint) {
         newEndpoint.id = endpoints.available_primary_key();
-	newEndpoint.provider = provider;
-	newEndpoint.specifier = specifier;
-	newEndpoint.constants = constants;
-	newEndpoint.parts = parts;
+	    newEndpoint.provider = provider;
+	    newEndpoint.specifier = specifier;
+        newEndpoint.broker = broker;
+	    newEndpoint.constants = constants;
+	    newEndpoint.parts = parts;
         newEndpoint.dividers = dividers;
     });
 }

@@ -60,6 +60,7 @@ namespace db {
         uint64_t id;
         account_name provider;
         std::string specifier;
+        account_name broker;
         std::vector<int64_t> constants;
         std::vector<uint64_t> parts;
         std::vector<uint64_t> dividers;
@@ -72,7 +73,7 @@ namespace db {
         // this secondary key allows to find item with specified provider and specifier by using find() method
         key256 get_hash() const { return db::hash(provider, specifier); }
 	  
-        EOSLIB_SERIALIZE(endpoint, (id)(provider)(specifier)(constants)(parts)(dividers))
+        EOSLIB_SERIALIZE(endpoint, (id)(provider)(specifier)(broker)(constants)(parts)(dividers))
     };
 
     //@abi table provider i64
