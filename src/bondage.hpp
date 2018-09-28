@@ -122,15 +122,7 @@ private:
         int64_t b = function[1];
         int64_t c = function[2];
 
-        return a * (pow(dot, c));
-    }
-
-    static uint64_t fast_log2(int64_t x) {
-        uint64_t ix = (uint64_t &) x;
-        uint64_t exp = (ix >> 23) & 0xFF;
-        uint64_t log2 = uint64_t(exp) - 127;
-
-        return log2;
+        return a * (uint64_t(pow(dot, c)));
     }
 
     uint64_t update_issued(db::issuedIndex &issued, account_name payer, uint64_t endpoint_id, int64_t dots) {
