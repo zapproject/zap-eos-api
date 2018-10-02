@@ -16,7 +16,7 @@ void Registry::newprovider(account_name provider, std::string title, uint64_t ke
     });
 }
 
-void Registry::addendpoint(account_name provider, std::string specifier, std::vector<int64_t> functions, account_name broker) {
+void Registry::addendpoint(account_name provider, std::string specifier, std::vector<uint64_t> functions, account_name broker) {
     require_auth(provider);
 
     db::providerIndex providers(_self, _self);

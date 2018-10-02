@@ -20,5 +20,4 @@ include_directories(${EOSIO_WASMSDK_ROOT}/include)
 
 include(EosioWasmToolchain)
 
-
 add_executable(main.wasm ${SRC_DIR}/main.cpp)

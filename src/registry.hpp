@@ -17,7 +17,7 @@ class Registry {
 
         //Add new endpoint for provider
         //<provider> param must be valid account and action sender must have permissions for this acc
-        void addendpoint(account_name provider, std::string specifier, std::vector<int64_t> functions, account_name broker);
+        void addendpoint(account_name provider, std::string specifier, std::vector<uint64_t> functions, account_name broker);
 
 	
         // VIEW METHODS
@@ -38,7 +38,7 @@ class Registry {
     private:        
         account_name _self;
 
-	std::string vector_to_string(std::vector<uint64_t> v) {
+	    std::string vector_to_string(std::vector<uint64_t> v) {
             std::string str = "[";
             
             uint64_t counter = 0;

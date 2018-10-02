@@ -5,8 +5,7 @@ void Main::newprovider(account_name provider, std::string title, uint64_t public
     Main::registry.newprovider(provider, title, public_key);
 }
 
-void
-Main::addendpoint(account_name provider, std::string specifier, std::vector <int64_t> functions, account_name broker) {
+void Main::addendpoint(account_name provider, std::string specifier, std::vector <uint64_t> functions, account_name broker) {
     Main::registry.addendpoint(provider, specifier, functions, broker);
 }
 

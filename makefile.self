@@ -14,6 +14,9 @@ compile:
 	-mkdir $(PROJECT_DIR)/build/main
 	eosio-cpp -o $(PROJECT_DIR)/build/main/main.wasm $(PROJECT_DIR)/src/main.cpp --abigen
 
+l_genabi:
+	eosiocpp -g $(PROJECT_DIR)/build/main/main.abi $(PROJECT_DIR)/src/main.cpp
+
 #                          #
 # SMART CONTRACTS COMMANDS #
 #                          #

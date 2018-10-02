@@ -22,7 +22,7 @@ public:
     //Add new endpoint for provider
     //<provider> param must be valid account and action sender must have permissions for this acc
     [[eosio::action]]
-    void addendpoint(account_name provider, std::string specifier, std::vector <int64_t> functions, account_name broker);
+    void addendpoint(account_name provider, std::string specifier, std::vector <uint64_t> functions, account_name broker);
 
     // BONDAGE METHODS
 
@@ -94,3 +94,5 @@ private:
     Registry registry;
     Dispatcher dispatcher;
 };
+
+EOSIO_ABI(Main, (newprovider)(addendpoint)(bond)(unbond)(estimate)(query)(respond)(subscribe)(unsubscribe)(viewps)(viewes)(endpbyhash)(viewhe)(viewh)(viewi))

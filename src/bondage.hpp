@@ -80,7 +80,7 @@ private:
         return calculate_function(function, dot);
     }
 
-    std::string static vector_to_string(std::vector <int64_t> v) {
+    static std::string vector_to_string1(std::vector <uint64_t> v) {
         std::string str = "[";
 
         uint64_t counter = 0;
@@ -97,32 +97,32 @@ private:
         return str;
     }
 
-    static std::vector <int64_t> find_dot_function(std::vector <int64_t> functions, uint64_t dot) {
+    static std::vector <uint64_t> find_dot_function(std::vector <uint64_t> functions, uint64_t dot) {
         uint64_t i = 0;
         while (i < functions.size()) {
-            int64_t length = functions[i];
-            int64_t right_bound = functions[i + length + 1];
+            uint64_t length = functions[i];
+            uint64_t right_bound = functions[i + length + 1];
 
             if (dot <= right_bound) {
                 // fetch function without length parameter
-                auto result_vector = std::vector<int64_t>(functions.begin() + i + 1,
+                auto result_vector = std::vector<uint64_t>(functions.begin() + i + 1,
                                                           functions.begin() + i + length - 1);
-                print_f("found function for dot % is: %", dot, vector_to_string(result_vector));
+                print_f("found function for dot % is: %", dot, vector_to_string1(result_vector));
                 return result_vector;
             } else {
                 i = i + length + 2;
             }
         }
 
-        return std::vector<int64_t>();
+        return std::vector<uint64_t>();
     }
 
-    static uint64_t calculate_function(std::vector <int64_t> function, uint64_t dot) {
-        int64_t a = function[0];
-        int64_t b = function[1];
-        int64_t c = function[2];
+    static uint64_t calculate_function(std::vector <uint64_t> function, uint64_t dot) {
+        uint64_t a = function[0];
+        uint64_t b = function[1];
+        uint64_t c = function[2];
 
-        return a * (uint64_t(pow(dot, c)));
+        return 0;
     }
 
     uint64_t update_issued(db::issuedIndex &issued, account_name payer, uint64_t endpoint_id, int64_t dots) {
