@@ -27,7 +27,7 @@ async function getRowsByPrimaryKey(eos, node, {scope, table_name, table_key}) {
 
 describe('Main', function () {
 
-    /*describe('EOS Node', function () {
+    describe('EOS Node', function () {
         let node = new Node();
 
         beforeEach(function (done) {
@@ -170,7 +170,7 @@ describe('Main', function () {
             node.kill();
         })
     });
-*/
+
     describe('Contracts', function () {
         let node = new Node(false, false);
 
