@@ -5,7 +5,7 @@ void Main::newprovider(account_name provider, std::string title, uint64_t public
     Main::registry.newprovider(provider, title, public_key);
 }
 
-void Main::addendpoint(account_name provider, std::string specifier, std::vector <uint64_t> functions, account_name broker) {
+void Main::addendpoint(account_name provider, std::string specifier, std::vector <int64_t> functions, account_name broker) {
     Main::registry.addendpoint(provider, specifier, functions, broker);
 }
 
@@ -37,28 +37,3 @@ void Main::subscribe(account_name subscriber, account_name provider, std::string
 void Main::unsubscribe(account_name subscriber, account_name provider, std::string endpoint, bool from_sub) {
     Main::dispatcher.unsubscribe(subscriber, provider, endpoint, from_sub);
 }
-
-void Main::viewps(uint64_t from, uint64_t to) {
-    Main::registry.viewps(from, to);
-}
-
-void Main::viewes(account_name provider, uint64_t from, uint64_t to) {
-    Main::registry.viewes(provider, from, to);
-}
-
-void Main::endpbyhash(account_name provider, std::string specifier) {
-    Main::registry.endpbyhash(provider, specifier);
-}
-
-void Main::viewhe(account_name holder, account_name provider, std::string endpoint) {
-    Main::bondage.viewhe(holder, provider, endpoint);
-}
-
-void Main::viewh(account_name holder) {
-    Main::bondage.viewh(holder);
-}
-
-void Main::viewi(account_name provider, std::string endpoint) {
-    Main::bondage.viewi(provider, endpoint);
-}
-

@@ -22,7 +22,7 @@ public:
     //Add new endpoint for provider
     //<provider> param must be valid account and action sender must have permissions for this acc
     [[eosio::action]]
-    void addendpoint(account_name provider, std::string specifier, std::vector <uint64_t> functions, account_name broker);
+    void addendpoint(account_name provider, std::string specifier, std::vector <int64_t> functions, account_name broker);
 
     // BONDAGE METHODS
 
@@ -57,42 +57,10 @@ public:
     [[eosio::action]]
     void unsubscribe(account_name subscriber, account_name provider, std::string endpoint, bool from_sub);
 
-
-    // VIEW METHODS
-
-    //View all provider in specified bounds
-    //<from> - start index
-    //<to> - end index
-    [[eosio::action]]
-    void viewps(uint64_t from, uint64_t to);
-
-    //View all endpoints for specified provider in specified bounds
-    //<from> - start index
-    //<to> - end index
-    [[eosio::action]]
-    void viewes(account_name provider, uint64_t from, uint64_t to);
-
-    //View params of specified endpoint
-    [[eosio::action]]
-    void endpbyhash(account_name provider, std::string specifier);
-
-    //View specified endpoint dots for specified holder
-    [[eosio::action]]
-    void viewhe(account_name holder, account_name provider, std::string endpoint);
-
-    //View all endpoints for specified holder
-    [[eosio::action]]
-    void viewh(account_name holder);
-
-    //View total issued dots for specified endpoint
-    [[eosio::action]]
-    void viewi(account_name provider, std::string endpoint);
-
-
 private:
     Bondage bondage;
     Registry registry;
     Dispatcher dispatcher;
 };
 
-EOSIO_ABI(Main, (newprovider)(addendpoint)(bond)(unbond)(estimate)(query)(respond)(subscribe)(unsubscribe)(viewps)(viewes)(endpbyhash)(viewhe)(viewh)(viewi))
+EOSIO_ABI(Main, (newprovider)(addendpoint)(bond)(unbond)(estimate)(query)(respond)(subscribe)(unsubscribe))

@@ -22,7 +22,9 @@ namespace db {
     // TODO: must be reviewed
     // Does this hash will be always unique?
     static key256 hash(account_name provider, std::string specifier) {
-        std::string provider_string = std::to_string(provider);
+        // TODO: std::to_string currently not working with eosio.cdt compiler
+        // https://github.com/EOSIO/eosio.cdt/issues/95, then use name{}.to_string()
+        std::string provider_string = name{provider}.to_string();
         std::string concatenated = provider_string + specifier;
         uint32_t result_size = concatenated.length() + 1;
 
@@ -61,7 +63,7 @@ namespace db {
         account_name provider;
         std::string specifier;
         account_name broker;
-        std::vector<uint64_t> functions;
+        std::vector<int64_t> functions;
 
         uint64_t primary_key() const { return id; }
            

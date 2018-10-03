@@ -17,60 +17,10 @@ class Registry {
 
         //Add new endpoint for provider
         //<provider> param must be valid account and action sender must have permissions for this acc
-        void addendpoint(account_name provider, std::string specifier, std::vector<uint64_t> functions, account_name broker);
-
-	
-        // VIEW METHODS
-
-        //View all provider in specified bounds
-        //<from> - start index
-        //<to> - end index
-        void viewps(uint64_t from, uint64_t to);
-
-        //View all endpoints for specified provider in specified bounds
-        //<from> - start index
-        //<to> - end index
-        void viewes(account_name provider, uint64_t from, uint64_t to);
-
-        //View params of specified endpoint
-        void endpbyhash(account_name provider, std::string specifier);
+        void addendpoint(account_name provider, std::string specifier, std::vector<int64_t> functions, account_name broker);
 
     private:        
         account_name _self;
-
-	    std::string vector_to_string(std::vector<uint64_t> v) {
-            std::string str = "[";
-            
-            uint64_t counter = 0;
-            for (auto const& item: v) {
-                if (counter > 0) {
-                    str += ", ";	
-                }
-	
-                str += std::to_string(item);
-                counter++;
-            }
-            
-            str += "]";
-            return str;
-        }
-
-        std::string vector_to_string(std::vector<int64_t> v) {
-            std::string str = "[";
-            
-            uint64_t counter = 0;
-            for (auto const& item: v) {
-                if (counter > 0) {
-                    str += ", ";	
-                }
-	
-                str += std::to_string(item);
-                counter++;
-            }
-            
-            str += "]";
-            return str;
-        }
 
         // TODO: should be refactored to optimize search
         bool validateEndpoint(const db::endpointIndex &idx, account_name provider, std::string specifier) {
