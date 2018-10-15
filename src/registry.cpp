@@ -16,7 +16,7 @@ void Registry::newprovider(account_name provider, std::string title, uint64_t ke
     });
 }
 
-void Registry::addendpoint(account_name provider, std::string specifier, std::vector<int64_t> constants, std::vector<uint64_t> parts, std::vector<uint64_t> dividers, account_name broker) {
+void Registry::addendpoint(account_name provider, std::string specifier, std::vector<int64_t> functions, account_name broker) {
     require_auth(provider);
 
     db::providerIndex providers(_self, _self);
@@ -35,59 +35,9 @@ void Registry::addendpoint(account_name provider, std::string specifier, std::ve
         newEndpoint.id = endpoints.available_primary_key();
 	    newEndpoint.provider = provider;
 	    newEndpoint.specifier = specifier;
-        newEndpoint.broker = broker;
-	    newEndpoint.constants = constants;
-	    newEndpoint.parts = parts;
-        newEndpoint.dividers = dividers;
+	    newEndpoint.broker = broker;
+	    newEndpoint.functions = functions;
     });
-}
-
-void Registry::viewps(uint64_t from, uint64_t to) {
-    eosio_assert(from <= to, "'from' value must be lower or equal than 'to' value.");
-
-    db::providerIndex providers(_self, _self);
-
-    auto iterator = providers.begin();
-    uint64_t counter = 0;
-    while (iterator != providers.end() && counter <= (to - from)) {
-        auto item = *iterator;
-        print_f("provider #%: user = %, public_key = %, title = %;", counter, name{item.user}, item.key, item.title);
-        iterator++;
-        counter++;
-    }
-}
-
-void Registry::viewes(account_name provider, uint64_t from, uint64_t to) {
-    db::endpointIndex endpoints(_self, provider);
-
-    auto endpointsIterator = endpoints.begin();
-    uint64_t counter = 0;
-    while (endpointsIterator != endpoints.end() && counter <= (to - from)) {
-        auto item = *endpointsIterator;
-        std::string constants = Registry::vector_to_string(item.constants);
-        std::string parts = Registry::vector_to_string(item.parts);
-        std::string dividers = Registry::vector_to_string(item.dividers);
-        print_f("endpoint #%: provider = %, specifier = %, constants = %, parts = %, dividers = %.\n", counter, name{item.provider}, item.specifier, constants, parts, dividers);
-
-        counter++;
-        endpointsIterator++;
-   }  
-}
-
-// EXPERIMENTAL FEATURE
-// CURRENTLY IT WORKS, BUT IT MUST BE TESTED
-void Registry::endpbyhash(account_name provider, std::string specifier) {
-     db::endpointIndex endpoints(_self, provider);
-
-     auto idx = endpoints.get_index<N(byhash)>();
-     key256 hash = key256(db::hash(provider, specifier));
-     auto hashItr = idx.find(hash);
-     auto item = endpoints.get(hashItr->id);
-
-     std::string constants = Registry::vector_to_string(item.constants);
-     std::string parts = Registry::vector_to_string(item.parts);
-     std::string dividers = Registry::vector_to_string(item.dividers);
-     print_f("endpoint: provider = %, specifier = %, constants = %, parts = %, dividers = %.\n", name{item.provider}, item.specifier, constants, parts, dividers);
 }
 
 

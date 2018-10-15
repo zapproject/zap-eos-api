@@ -8,16 +8,14 @@ TOKEN_DIR = $(EOS_DIR)/build/contracts/eosio.token
 install:
 	-mkdir $(PROJECT_DIR)/build
 	-mkdir $(PROJECT_DIR)/build/main
-	
-generate_abi:
-	-mkdir $(PROJECT_DIR)/build
-	-mkdir $(PROJECT_DIR)/build/main
-	eosiocpp -g $(PROJECT_DIR)/build/main/main.abi $(PROJECT_DIR)/src/main.hpp
 
-lcompile:
+compile:
 	-mkdir $(PROJECT_DIR)/build
 	-mkdir $(PROJECT_DIR)/build/main
-	eosiocpp -o $(PROJECT_DIR)/build/main/main.wast $(PROJECT_DIR)/src/main.cpp
+	eosio-cpp -o $(PROJECT_DIR)/build/main/main.wasm $(PROJECT_DIR)/src/main.cpp --abigen
+
+l_genabi:
+	eosiocpp -g $(PROJECT_DIR)/build/main/main.abi $(PROJECT_DIR)/src/main.cpp
 
 #                          #
 # SMART CONTRACTS COMMANDS #

@@ -191,9 +191,7 @@ describe('Main', function () {
                     provider: node.getAccounts().provider.name,
                     specifier: endpoint,
                     broker: broker,
-                    constants: [200, 3, 0],
-                    parts: [0, 1000000],
-                    dividers: [1]
+                    functions: [3, 0, 0, 2, 10000]
                 });
         }
 

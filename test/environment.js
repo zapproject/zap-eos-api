@@ -62,8 +62,7 @@ class TestNode extends Node {
 
     async compile() {
         let options = {cwd: PROJECT_PATH.toString(), /*disable output*/ stdio: 'pipe'};
-        execSync('make -f makefile.self lcompile', options);
-        execSync('make -f makefile.self generate_abi', options);
+        execSync('make -f makefile.self compile', options);
     }
 
     async registerAccounts(eos) {

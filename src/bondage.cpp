@@ -90,42 +90,6 @@ void Bondage::estimate(account_name provider, std::string endpoint, uint64_t dot
     print_f("Estimated price for provider = '%' and endpoint = '%' is % ZAP.\n", name{provider}, endpoint, price);
 }
 
-void Bondage::viewhe(account_name holder, account_name provider, std::string endpoint) {
-    db::holderIndex holders(_self, holder);
-    
-    auto idx = holders.get_index<N(byhash)>();
-    auto hashItr = idx.find(db::hash(provider, endpoint));
-    auto item = holders.get(hashItr->provider);
-
-    print_f("Holder %: provider = %; endpoint = %; dots = %; escrow = %.\n", name{holder}, name{item.provider}, item.endpoint, item.dots, item.escrow);
-}
-
-void Bondage::viewh(account_name holder) {
-     db::holderIndex holders(_self, holder);
-     
-     auto iterator = holders.begin();
-     uint64_t counter = 0;
-     while (iterator != holders.end()) {
-         print_f("#% - provider = %; endpoint = %; dots = %; escrow = %.\n", counter, name{iterator->provider}, iterator->endpoint, iterator->dots, iterator->escrow);
-         counter++;
-         iterator++;
-     }
-}
-
-void Bondage::viewi(account_name provider, std::string endpoint) {
-    db::endpointIndex endpoints(_self, provider);
-    db::issuedIndex issued(_self, provider);
-
-    auto endpoint_index = endpoints.get_index<N(byhash)>();
-    auto endpoint_iterator = endpoint_index.find(db::hash(provider, endpoint));
-    auto issued_iterator = issued.find(endpoint_iterator->id);
-
-    eosio_assert(issued_iterator != issued.end(), "Issued dots not found.");
-
-    print_f("Total dots for %/% = %.\n", name{provider}, endpoint, issued_iterator->dots);
-}
-
-
 
 
 
