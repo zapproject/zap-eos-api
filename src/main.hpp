@@ -22,7 +22,12 @@ public:
     //Add new endpoint for provider
     //<provider> param must be valid account and action sender must have permissions for this acc
     [[eosio::action]]
-    void addendpoint(account_name provider, std::string specifier, std::vector <int64_t> functions, account_name broker);
+    void addendpoint(account_name provider, std::string specifier, std::vector<int64_t> functions, account_name broker);
+
+    //Set params for endpoint or provider (endpoint == '')
+    //<provider> param must be valid account and action sender must have permissions for this acc
+    [[eosio::action]]
+    void setparams(account_name provider, std::string specifier, std::vector<std::string> params);
 
     // BONDAGE METHODS
 

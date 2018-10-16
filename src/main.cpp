@@ -37,3 +37,7 @@ void Main::subscribe(account_name subscriber, account_name provider, std::string
 void Main::unsubscribe(account_name subscriber, account_name provider, std::string endpoint, bool from_sub) {
     Main::dispatcher.unsubscribe(subscriber, provider, endpoint, from_sub);
 }
+
+void Main::setparams(account_name provider, std::string specifier, std::vector<std::string> params) {
+    Main::registry.setparams(provider, specifier, params);
+}
