@@ -1,0 +1,13 @@
+# Ignore everything
+*
+
+# Except these files...
+!.gitignore
+!readme.md
+!makefile.self
+!CMakeLists.txt
+!package.json
+!src
+!test/
+!test/**
+!test/eos/

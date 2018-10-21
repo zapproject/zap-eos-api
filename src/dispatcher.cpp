@@ -1,44 +1,118 @@
-#include <dispatcher.hpp>
+#include "dispatcher.hpp"
+#include "bondage.hpp"
 
-void Dispatcher::query(account_name from, std::string endpoint) {
-    require_auth(from);
+#define QUERY_CALL_PRICE 1
+#define DOT_SECONDS 60
 
-    Dispatcher::queryIndex queries(_self, _self);
+void Dispatcher::query(account_name subscriber, account_name provider, std::string endpoint, std::string query, bool onchain_provider, bool onchain_subscriber) {
+    require_auth(subscriber);
 
-    uint64_t availableKey = queries.available_primary_key();
-    print_f("query to save: id = %, user = %, endpoint = %, executed = false",
-        availableKey, from, endpoint);
+    uint64_t bound = Dispatcher::get_bound_dots(subscriber, provider, endpoint);
+    eosio_assert(bound > 0, "Haven't got bonded dots for provider." );
 
-    queries.emplace(from, [&](auto& q) {
-        q.id = availableKey;
-        q.user = from;
-        q.endpoint = endpoint;
-        q.executed = false;
-    });
+    Dispatcher::escrow(subscriber, provider, endpoint, QUERY_CALL_PRICE);
+
+    if (onchain_provider) {
+        require_recipient(provider); 
+    } else {
+        uint64_t availableKey = queries.available_primary_key();
+        queries.emplace(subscriber, [&](auto& q) {
+            q.id = availableKey;
+            q.provider = provider;
+            q.subscriber = subscriber;
+            q.endpoint = endpoint;
+            q.data = query;
+            q.onchain = onchain_subscriber;
+        });
+
+        print_f("Query called: id = %, sub = %, provider = %, endpoint = %;", availableKey, name{subscriber}, name{provider}, endpoint);
+    }   
 }
 
-void Dispatcher::respond(account_name provider, uint64_t id, std::string query) {
-    Dispatcher::queryIndex queries(_self, _self);
+void Dispatcher::respond(account_name responder, uint64_t id, std::string params) {
+    require_auth(responder);
 
-    auto iterator = queries.find(id);
-    eosio_assert(iterator != queries.end(), "Query not found!");
+    auto q = queries.find(id);
 
-    queries.modify(iterator, provider, [&](auto& q) {
-        q.executed = true;
-    });
+    eosio_assert(q != queries.end(), "Query fullfilled or doesn't exists.");
+    eosio_assert(q->provider == responder, "Only query provider can respond to query.");  
 
-    print_f("Query with id = % is executed.", id);
-}
+    if (q->onchain) {
+        action(
+            permission_level{ responder, N(active) },
+            q->subscriber, N(callback),
+            std::make_tuple(params)
+        ).send();
+    } else {
+        //TODO: implement event for offchain subscriber
+    }
 
-void Dispatcher::queries() {
-    Dispatcher::queryIndex queries(_self, _self);
+    Dispatcher::release(q->subscriber, q->provider, q->endpoint, QUERY_CALL_PRICE);
 
-    uint64_t id = 0;
-    while(queries.find(id) != queries.end()) {
-	auto q = queries.get(id);
-    	print_f("query[%]: user=%, endpoint=%, executed=%\n", q.id, q.user, q.endpoint, q.executed);
-	id++;
+    bool deleted = Dispatcher::delete_query(queries, q->id);
+    if (deleted) {
+        print_f("Query responded successfully, id = %", q->id);
+    } else {
+        print_f("Query responded with error while deleting, id = %", q->id);
     }
 }
+
+void Dispatcher::subscribe(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots) {
+    require_auth(subscriber);
+
+    eosio_assert(dots > 0, "Dots number must be bigger than zero.");
+
+    db::subscriptionIndex subscriptions(_self, provider);
+
+    auto sub_hash_index = subscriptions.get_index<N(byhash)>();
+    auto sub_iterator = sub_hash_index.find(db::hash(subscriber, endpoint));
+
+    eosio_assert(sub_iterator == sub_hash_index.end(), "Already subscribed.");
+
+    Dispatcher::escrow(subscriber, provider, endpoint, dots);
+
+    time start = now();
+    time end = start + (dots * DOT_SECONDS);
+
+    subscriptions.emplace(subscriber, [&] (auto& s) {
+        s.id = subscriptions.available_primary_key();
+        s.price = dots;
+        s.start = start;
+        s.end = end;
+        s.subscriber = subscriber;
+        s.endpoint = endpoint;
+    });
+}
+
+void Dispatcher::unsubscribe(account_name subscriber, account_name provider, std::string endpoint, bool from_sub) {
+    if (from_sub) {
+        require_auth(subscriber);
+    } else {
+        require_auth(provider);
+    }
+
+    db::subscriptionIndex subscriptions(_self, provider);
+
+    auto sub_hash_index = subscriptions.get_index<N(byhash)>();
+    auto sub_iterator = sub_hash_index.find(db::hash(subscriber, endpoint));
+
+    eosio_assert(sub_iterator != sub_hash_index.end(), "Can not found subscribtion.");
+  
+    time current_time = now();
+    if (current_time < sub_iterator->end) {
+        time passed = current_time - sub_iterator->start;
+        uint64_t dots_used = passed / DOT_SECONDS;
+        Dispatcher::release(subscriber, provider, endpoint, dots_used);
+    } else {
+        Dispatcher::release(subscriber, provider, endpoint, sub_iterator->price);
+    }
+    auto main_iterator = subscriptions.find(sub_iterator->id);
+    subscriptions.erase(main_iterator);
+}
+
+
+
+
+
 
 

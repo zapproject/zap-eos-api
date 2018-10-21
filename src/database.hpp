@@ -1,6 +1,14 @@
+#ifndef DATABASE_HEADER
+#define DATABASE_HEADER
+
+#define ZAP_TOKEN_SYMBOL "TST"
+#define ZAP_TOKEN_DECIMALS 0
+
 #include <eosiolib/eosio.hpp>
 #include <eosiolib/crypto.h>
 #include <eosiolib/fixed_key.hpp>
+#include <eosiolib/asset.hpp>
+#include <eosiolib/multi_index.hpp>
 #include <string>
 #include <vector>
 
@@ -8,13 +16,15 @@ using namespace eosio;
 
 namespace db {
 
-    static std::array<uint128_t, 2> checksum256_to_uint128array(checksum256 c);
     static key256 hash(account_name provider, std::string specifier);
+    static std::array<uint128_t, 2> checksum256_to_uint128array(checksum256 c);
 
     // TODO: must be reviewed
     // Does this hash will be always unique?
     static key256 hash(account_name provider, std::string specifier) {
-        std::string provider_string = std::to_string(provider);
+        // TODO: std::to_string currently not working with eosio.cdt compiler
+        // https://github.com/EOSIO/eosio.cdt/issues/95, then use name{}.to_string()
+        std::string provider_string = name{provider}.to_string();
         std::string concatenated = provider_string + specifier;
         uint32_t result_size = concatenated.length() + 1;
 
@@ -47,28 +57,27 @@ namespace db {
     }
 
     //@abi table endpoint i64
-    struct endpoint {
+    //Table for provider endpoints, created in context of specified provider
+    struct [[eosio::table]] endpoint {
         uint64_t id;
         account_name provider;
         std::string specifier;
-        std::vector<int64_t> constants;
-        std::vector<uint64_t> parts;
-        std::vector<uint64_t> dividers;
-        uint128_t issued;
+        account_name broker;
+        std::vector<int64_t> functions;
 
         uint64_t primary_key() const { return id; }
-        uint64_t get_provider() const { return provider; }
            
-        // EXPERIMENTAL FEATURE
+        // TODO: EXPERIMENTAL FEATURE
         // I haven't found any examples of key256 usage, but, according doc, multi_index supports 256 bytes secondary keys 
         // this secondary key allows to find item with specified provider and specifier by using find() method
-        key256 get_hash() const { return db::hash(provider, specifier); }
-	  
-        EOSLIB_SERIALIZE(endpoint, (id)(provider)(specifier)(constants)(parts)(dividers)(issued))
+        key256 by_hash() const { return db::hash(provider, specifier); }
+
+        EOSLIB_SERIALIZE(endpoint, (id)(provider)(specifier)(broker)(functions))
     };
 
     //@abi table provider i64
-    struct provider {
+    //Table for providers, created in context of zap registry contract
+    struct [[eosio::table]] provider {
         account_name user;
         std::string title;
         uint64_t key;
@@ -79,7 +88,8 @@ namespace db {
     };
 
     //@abi table holder i64
-    struct holder {
+    //Table for user holders, created in context of user
+    struct [[eosio::table]] holder {
         account_name provider;
         std::string endpoint;
         uint64_t dots;
@@ -89,14 +99,68 @@ namespace db {
         key256 get_hash() const { return db::hash(provider, endpoint); }
 
         EOSLIB_SERIALIZE(holder, (provider)(endpoint)(dots)(escrow))
-    };     
+    };
+
+    //@abi table issued i64
+    //Table to store total issued dots for endpoint, created in context of provider, pk is same as pk in endpoints
+    struct [[eosio::table]] issued {
+        uint64_t endpointid;
+        uint64_t dots;
+        
+        uint64_t primary_key() const { return endpointid; }
+
+        EOSLIB_SERIALIZE(issued, (endpointid)(dots))
+    };
+
+    //@abi table qdata i64
+    //Table to store user queries
+    struct [[eosio::table]] qdata {
+        uint64_t id;
+        account_name provider;
+        account_name subscriber;
+        std::string endpoint;
+        std::string data;
+        bool onchain;
+
+        uint64_t primary_key() const { return id; }
+
+        EOSLIB_SERIALIZE(qdata, (id)(provider)(subscriber)(endpoint)(data)(onchain))
+    };
+
+    //@abi table subscription i64
+    struct [[eosio::table]] subscription {
+        uint64_t id;
+        uint64_t price;
+        uint64_t start;
+        uint64_t end;
+        account_name subscriber;
+        std::string endpoint;
+
+        uint64_t primary_key() const { return id; }
+        key256 get_hash() const { return db::hash(subscriber, endpoint); }
+
+        EOSLIB_SERIALIZE(subscription, (id)(price)(start)(end)(subscriber)(endpoint))
+    };
+
 
     typedef multi_index<N(provider), provider> providerIndex;
+
     typedef multi_index<N(endpoint), endpoint,
-                indexed_by<N(byprovider), const_mem_fun<endpoint, uint64_t, &endpoint::get_provider>>,
-                indexed_by<N(byhash), const_mem_fun<endpoint, key256, &endpoint::get_hash>>
+                indexed_by<N(byhash), const_mem_fun<endpoint, key256, &endpoint::by_hash>>
             > endpointIndex;
+
     typedef multi_index<N(holder), holder,
                 indexed_by<N(byhash), const_mem_fun<holder, key256, &holder::get_hash>>
             > holderIndex;
+
+    typedef multi_index<N(issued), issued> issuedIndex;
+
+    typedef multi_index<N(qdata), qdata> queryIndex;
+
+    typedef multi_index<N(subscription), subscription,
+                indexed_by<N(byhash), const_mem_fun<subscription, key256, &subscription::get_hash>>
+            > subscriptionIndex;
+ 
 }
+
+#endif
