@@ -96,7 +96,7 @@ void Dispatcher::unsubscribe(account_name subscriber, account_name provider, std
     auto sub_hash_index = subscriptions.get_index<N(byhash)>();
     auto sub_iterator = sub_hash_index.find(db::hash(subscriber, endpoint));
 
-    eosio_assert(sub_iterator != sub_hash_index.end(), "Can not found subscribtion.");
+    eosio_assert(sub_iterator != sub_hash_index.end(), "Can not found subscription.");
   
     time current_time = now();
     if (current_time < sub_iterator->end) {
@@ -108,6 +108,25 @@ void Dispatcher::unsubscribe(account_name subscriber, account_name provider, std
     }
     auto main_iterator = subscriptions.find(sub_iterator->id);
     subscriptions.erase(main_iterator);
+}
+
+void Dispatcher::cancelquery(account_name subscriber, uint64_t query_id) {
+    db::holderIndex holders(_self, subscriber);
+
+    auto query_iterator = queries.find(query_id);
+
+    eosio_assert(query_iterator != queries.end(), "Query not found.");
+
+    // return dots to user
+    Dispatcher::update_holder(holders, subscriber, query_iterator->provider, query_iterator->endpoint, QUERY_CALL_PRICE, -QUERY_CALL_PRICE);
+
+    // remove query call
+    bool deleted = Dispatcher::delete_query(queries, query_iterator->id);
+    if (deleted) {
+        print_f("Query responded successfully, id = %", query_iterator->id);
+    } else {
+        print_f("Query responded with error while deleting, id = %", query_iterator->id);
+    }
 }
 
 

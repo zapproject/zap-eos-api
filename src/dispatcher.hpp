@@ -18,6 +18,9 @@ class Dispatcher {
         //Remove subscription
         void unsubscribe(account_name subscriber, account_name provider, std::string endpoint, bool from_sub);
 
+        //Cancel query execution
+        void cancelquery(account_name subscriber, uint64_t query_id);
+
     private:
         account_name _self;   
         db::queryIndex queries;
