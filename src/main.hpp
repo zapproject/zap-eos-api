@@ -62,6 +62,10 @@ public:
     [[eosio::action]]
     void unsubscribe(account_name subscriber, account_name provider, std::string endpoint, bool from_sub);
 
+    //Remove query
+    [[eosio::action]]
+    void cancelquery(account_name subscriber, uint64_t query_id);
+
 private:
     Bondage bondage;
     Registry registry;

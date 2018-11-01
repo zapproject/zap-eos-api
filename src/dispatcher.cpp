@@ -29,6 +29,7 @@ void Dispatcher::query(account_name subscriber, account_name provider, std::stri
     }   
 }
 
+// Don't need to use different function for different params, json can be passed
 void Dispatcher::respond(account_name responder, uint64_t id, std::string params) {
     require_auth(responder);
 
@@ -111,6 +112,8 @@ void Dispatcher::unsubscribe(account_name subscriber, account_name provider, std
 }
 
 void Dispatcher::cancelquery(account_name subscriber, uint64_t query_id) {
+    require_auth(subscriber);
+
     db::holderIndex holders(_self, subscriber);
 
     auto query_iterator = queries.find(query_id);

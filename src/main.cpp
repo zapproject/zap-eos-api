@@ -41,3 +41,7 @@ void Main::unsubscribe(account_name subscriber, account_name provider, std::stri
 void Main::setparams(account_name provider, std::string specifier, std::vector<std::string> params) {
     Main::registry.setparams(provider, specifier, params);
 }
+
+void Main::cancelquery(account_name subscriber, uint64_t query_id) {
+    Main::dispatcher.cancelquery(subscriber, query_id);
+}
