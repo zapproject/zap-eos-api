@@ -72,4 +72,4 @@ private:
     Dispatcher dispatcher;
 };
 
-EOSIO_ABI(Main, (newprovider)(addendpoint)(bond)(unbond)(estimate)(query)(respond)(subscribe)(unsubscribe))
+EOSIO_ABI(Main, (newprovider)(addendpoint)(bond)(unbond)(estimate)(query)(respond)(subscribe)(unsubscribe)(cancelquery)(setparams))
