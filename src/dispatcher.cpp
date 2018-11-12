@@ -59,7 +59,7 @@ void Dispatcher::respond(account_name responder, uint64_t id, std::string params
     }
 }
 
-void Dispatcher::subscribe(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots) {
+void Dispatcher::subscribe(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots, std::string params) {
     require_auth(subscriber);
 
     eosio_assert(dots > 0, "Dots number must be bigger than zero.");

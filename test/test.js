@@ -245,7 +245,8 @@ describe('Main', function () {
                     subscriber: node.getAccounts().user.name,
                     provider: node.getAccounts().provider.name,
                     endpoint: endpoint,
-                    dots: amount
+                    dots: amount,
+                    params: 'some params'
                 });
         }
 

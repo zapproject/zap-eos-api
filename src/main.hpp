@@ -56,7 +56,7 @@ public:
 
     //Buy subscription to provider endpoint
     [[eosio::action]]
-    void subscribe(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots);
+    void subscribe(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots, std::string params);
 
     //Remove subscription
     [[eosio::action]]

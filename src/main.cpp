@@ -30,8 +30,8 @@ void Main::respond(account_name responder, uint64_t id, std::string params) {
     Main::dispatcher.respond(responder, id, params);
 }
 
-void Main::subscribe(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots) {
-    Main::dispatcher.subscribe(subscriber, provider, endpoint, dots);
+void Main::subscribe(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots, std::string params) {
+    Main::dispatcher.subscribe(subscriber, provider, endpoint, dots, params);
 }
 
 void Main::unsubscribe(account_name subscriber, account_name provider, std::string endpoint, bool from_sub) {

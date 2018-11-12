@@ -13,7 +13,7 @@ class Dispatcher {
         void respond(account_name responder, uint64_t id, std::string params);
 
         //Buy subscription to provider endpoint
-        void subscribe(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots);
+        void subscribe(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots, std::string params);
 
         //Remove subscription
         void unsubscribe(account_name subscriber, account_name provider, std::string endpoint, bool from_sub);
