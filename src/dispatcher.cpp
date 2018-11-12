@@ -3,6 +3,7 @@
 
 #define QUERY_CALL_PRICE 1
 #define DOT_SECONDS 60
+#define MIN_SUB_PRICE 1
 
 void Dispatcher::query(account_name subscriber, account_name provider, std::string endpoint, std::string query, bool onchain_provider, bool onchain_subscriber) {
     require_auth(subscriber);
@@ -48,7 +49,7 @@ void Dispatcher::respond(account_name responder, uint64_t id, std::string params
         //TODO: implement event for offchain subscriber
     }
 
-    Dispatcher::release(q->subscriber, q->provider, q->endpoint, QUERY_CALL_PRICE);
+    Dispatcher::release(responder, q->subscriber, q->provider, q->endpoint, QUERY_CALL_PRICE);
 
     bool deleted = Dispatcher::delete_query(queries, q->id);
     if (deleted) {
@@ -103,10 +104,14 @@ void Dispatcher::unsubscribe(account_name subscriber, account_name provider, std
     if (current_time < sub_iterator->end) {
         time passed = current_time - sub_iterator->start;
         uint64_t dots_used = passed / DOT_SECONDS;
-        Dispatcher::release(subscriber, provider, endpoint, dots_used);
+        if (dots_used <= 0) {
+            dots_used = MIN_SUB_PRICE;
+        }
+        Dispatcher::release(from_sub ? subscriber : provider, subscriber, provider, endpoint, dots_used);
     } else {
-        Dispatcher::release(subscriber, provider, endpoint, sub_iterator->price);
+        Dispatcher::release(from_sub ? subscriber : provider, subscriber, provider, endpoint, sub_iterator->price);
     }
+
     auto main_iterator = subscriptions.find(sub_iterator->id);
     subscriptions.erase(main_iterator);
 }
