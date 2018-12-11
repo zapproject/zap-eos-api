@@ -7,7 +7,7 @@ class Dispatcher {
  	Dispatcher(account_name n): _self(n), queries(n, n) { }
 
         //Query provider data
-        void query(account_name subscriber, account_name provider, std::string endpoint, std::string query, bool onchain_provider, bool onchain_subscriber);
+        void query(account_name subscriber, account_name provider, std::string endpoint, std::string query, bool onchain_provider, bool onchain_subscriber, uint128_t timestamp);
 
         //Respond to query
         void respond(account_name responder, uint64_t id, std::string params);

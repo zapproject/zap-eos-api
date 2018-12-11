@@ -4,7 +4,7 @@
 #define QUERY_CALL_PRICE 1
 #define DOT_SECONDS 60
 
-void Dispatcher::query(account_name subscriber, account_name provider, std::string endpoint, std::string query, bool onchain_provider, bool onchain_subscriber) {
+void Dispatcher::query(account_name subscriber, account_name provider, std::string endpoint, std::string query, bool onchain_provider, bool onchain_subscriber, uint128_t timestamp) {
     require_auth(subscriber);
 
     uint64_t bound = Dispatcher::get_bound_dots(subscriber, provider, endpoint);

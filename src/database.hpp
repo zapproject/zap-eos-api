@@ -66,8 +66,7 @@ namespace db {
         std::vector<int64_t> functions;
 
         uint64_t primary_key() const { return id; }
-           
-        // TODO: EXPERIMENTAL FEATURE
+
         // I haven't found any examples of key256 usage, but, according doc, multi_index supports 256 bytes secondary keys 
         // this secondary key allows to find item with specified provider and specifier by using find() method
         key256 by_hash() const { return db::hash(provider, specifier); }
@@ -123,6 +122,7 @@ namespace db {
         bool onchain;
 
         uint64_t primary_key() const { return id; }
+        account_name get_provider() const { return provider; }
 
         EOSLIB_SERIALIZE(qdata, (id)(provider)(subscriber)(endpoint)(data)(onchain))
     };
@@ -155,7 +155,9 @@ namespace db {
 
     typedef multi_index<N(issued), issued> issuedIndex;
 
-    typedef multi_index<N(qdata), qdata> queryIndex;
+    typedef multi_index<N(qdata), qdata,
+                indexed_by<N(byprovider), const_mem_fun<qdata, uint64_t, &qdata::get_provider>>
+            > queryIndex;
 
     typedef multi_index<N(subscription), subscription,
                 indexed_by<N(byhash), const_mem_fun<subscription, key256, &subscription::get_hash>>

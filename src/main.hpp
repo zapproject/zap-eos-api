@@ -43,7 +43,7 @@ public:
     //Query provider data
     [[eosio::action]]
     void query(account_name subscriber, account_name provider, std::string endpoint, std::string query,
-               bool onchain_provider, bool onchain_subscriber);
+               bool onchain_provider, bool onchain_subscriber, uint128_t timestamp);
 
     //Query provider data
     [[eosio::action]]
