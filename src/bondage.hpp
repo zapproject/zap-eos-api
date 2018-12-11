@@ -118,6 +118,7 @@ private:
             print_f("Holder updated, added value = %.\n", dots);
         } else {
             holders.emplace(payer, [&](auto &h) {
+                h.id = holders.available_primary_key();
                 h.provider = provider;
                 h.endpoint = endpoint;
                 h.dots = dots;

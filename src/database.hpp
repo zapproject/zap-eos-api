@@ -89,12 +89,14 @@ namespace db {
     //@abi table holder i64
     //Table for user holders, created in context of user
     struct [[eosio::table]] holder {
+        uint64_t id;
         account_name provider;
         std::string endpoint;
         uint64_t dots;
         uint64_t escrow;
 
-        uint64_t primary_key() const { return provider; }
+        uint64_t primary_key() const { return id; }
+        account_name get_provider const { return provider; }
         key256 get_hash() const { return db::hash(provider, endpoint); }
 
         EOSLIB_SERIALIZE(holder, (provider)(endpoint)(dots)(escrow))
@@ -150,7 +152,8 @@ namespace db {
             > endpointIndex;
 
     typedef multi_index<N(holder), holder,
-                indexed_by<N(byhash), const_mem_fun<holder, key256, &holder::get_hash>>
+                indexed_by<N(byhash), const_mem_fun<holder, key256, &holder::get_hash>>,
+                indexed_by<N(byprovider), const_mem_fun<provider, account_name, &holder::get_provider>>
             > holderIndex;
 
     typedef multi_index<N(issued), issued> issuedIndex;
