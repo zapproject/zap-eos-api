@@ -47,7 +47,7 @@ public:
 
     //Query provider data
     [[eosio::action]]
-    void respond(account_name responder, uint64_t id, std::string params);
+    void respond(account_name responder, uint64_t id, std::string params, account_name subscriber);
 
     //Buy subscription to provider endpoint
     [[eosio::action]]

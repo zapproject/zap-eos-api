@@ -122,11 +122,12 @@ namespace db {
         std::string endpoint;
         std::string data;
         bool onchain;
+        uint128_t timestamp;
 
         uint64_t primary_key() const { return id; }
         account_name get_provider() const { return provider; }
 
-        EOSLIB_SERIALIZE(qdata, (id)(provider)(subscriber)(endpoint)(data)(onchain))
+        EOSLIB_SERIALIZE(qdata, (id)(provider)(subscriber)(endpoint)(data)(onchain)(timestamp))
     };
 
     //@abi table subscription i64
