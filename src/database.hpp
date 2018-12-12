@@ -155,7 +155,7 @@ namespace db {
 
     typedef multi_index<"holder"_n, holder,
                 indexed_by<"byhash"_n, const_mem_fun<holder, key256, &holder::get_hash>>,
-                indexed_by<"byprovider"_n, const_mem_fun<provider, uint64_t, &holder::get_provider>>
+                indexed_by<"byprovider"_n, const_mem_fun<holder, uint64_t, &holder::get_provider>>
             > holderIndex;
 
     typedef multi_index<"issued"_n, issued> issuedIndex;
