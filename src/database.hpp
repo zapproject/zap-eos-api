@@ -96,7 +96,7 @@ namespace db {
         uint64_t escrow;
 
         uint64_t primary_key() const { return id; }
-        account_name get_provider() const { return provider; }
+        uint64_t get_provider() const { return provider; }
         key256 get_hash() const { return db::hash(provider, endpoint); }
 
         EOSLIB_SERIALIZE(holder, (provider)(endpoint)(dots)(escrow))
@@ -125,7 +125,7 @@ namespace db {
         uint128_t timestamp;
 
         uint64_t primary_key() const { return id; }
-        account_name get_provider() const { return provider; }
+        uint64_t get_provider() const { return provider; }
         uint128_t get_timestamp() const { return timestamp; }
 
         EOSLIB_SERIALIZE(qdata, (id)(provider)(subscriber)(endpoint)(data)(onchain)(timestamp))
@@ -155,7 +155,7 @@ namespace db {
 
     typedef multi_index<N(holder), holder,
                 indexed_by<N(byhash), const_mem_fun<holder, key256, &holder::get_hash>>,
-                indexed_by<N(byprovider), const_mem_fun<provider, account_name, &holder::get_provider>>
+                indexed_by<N(byprovider), const_mem_fun<provider, uint64_t, &holder::get_provider>>
             > holderIndex;
 
     typedef multi_index<N(issued), issued> issuedIndex;
