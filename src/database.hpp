@@ -99,7 +99,7 @@ namespace db {
         uint64_t get_provider() const { return provider; }
         key256 get_hash() const { return db::hash(provider, endpoint); }
 
-        EOSLIB_SERIALIZE(holder, (provider)(endpoint)(dots)(escrow))
+        EOSLIB_SERIALIZE(holder, (id)(provider)(endpoint)(dots)(escrow))
     };
 
     //@abi table issued i64
