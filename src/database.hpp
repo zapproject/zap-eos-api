@@ -147,26 +147,26 @@ namespace db {
     };
 
 
-    typedef multi_index<N(provider), provider> providerIndex;
+    typedef multi_index<"provider"_n, provider> providerIndex;
 
-    typedef multi_index<N(endpoint), endpoint,
-                indexed_by<N(byhash), const_mem_fun<endpoint, key256, &endpoint::by_hash>>
+    typedef multi_index<"endpoint"_n, endpoint,
+                indexed_by<"byhash"_n, const_mem_fun<endpoint, key256, &endpoint::by_hash>>
             > endpointIndex;
 
-    typedef multi_index<N(holder), holder,
-                indexed_by<N(byhash), const_mem_fun<holder, key256, &holder::get_hash>>,
-                indexed_by<N(byprovider), const_mem_fun<provider, uint64_t, &holder::get_provider>>
+    typedef multi_index<"holder"_n, holder,
+                indexed_by<"byhash"_n, const_mem_fun<holder, key256, &holder::get_hash>>,
+                indexed_by<"byprovider"_n, const_mem_fun<provider, uint64_t, &holder::get_provider>>
             > holderIndex;
 
-    typedef multi_index<N(issued), issued> issuedIndex;
+    typedef multi_index<"issued"_n, issued> issuedIndex;
 
-    typedef multi_index<N(qdata), qdata,
-                indexed_by<N(byprovider), const_mem_fun<qdata, uint64_t, &qdata::get_provider>>,
-                indexed_by<N(bytimestamp), const_mem_fun<qdata, uint128_t, &qdata::get_timestamp>>
+    typedef multi_index<"qdata"_n, qdata,
+                indexed_by<"byprovider"_n, const_mem_fun<qdata, uint64_t, &qdata::get_provider>>,
+                indexed_by<"bytimestamp"_n, const_mem_fun<qdata, uint128_t, &qdata::get_timestamp>>
             > queryIndex;
 
-    typedef multi_index<N(subscription), subscription,
-                indexed_by<N(byhash), const_mem_fun<subscription, key256, &subscription::get_hash>>
+    typedef multi_index<"subscription"_n, subscription,
+                indexed_by<"byhash"_n, const_mem_fun<subscription, key256, &subscription::get_hash>>
             > subscriptionIndex;
  
 }
