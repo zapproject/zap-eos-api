@@ -41,4 +41,25 @@ void Registry::addendpoint(account_name provider, std::string specifier, std::ve
 }
 
 
+void Registry::setparams(account_name provider, std::string specifier, std::vector<std::string> params) {
+    require_auth(provider);
+
+    db::paramsIndex endpoint_params(_self, provider);
+
+    auto params_index = endpoint_params.get_index<N(byhash)>();
+    auto params_iterator = params_index.find(db::hash(provider, specifier));
+
+    if (params_iterator == params_index.end()) {
+        endpoint_params.emplace(provider, [&](auto& p) {
+            p.id = endpoint_params.available_primary_key();
+            p.provider = provider;
+            p.endpoint = specifier;
+            p.values = params;
+        });
+    } else {
+        params_index.modify(params_iterator, provider, [&](auto &p) {
+            p.values = params;
+        });
+    }
+}
 

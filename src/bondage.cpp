@@ -20,10 +20,13 @@ void Bondage::bond(account_name subscriber, account_name provider, std::string e
 
     // Update total issued dots for current endpoint
     uint64_t endpoint_id = endpoint_iterator->id;
-    uint64_t total_issued_dots = Bondage::update_issued(issued, subscriber, endpoint_id, dots);
+    uint64_t current_issued_dots = Bondage::update_issued(issued, subscriber, endpoint_id, dots);
+
+    db::endpoint current_endpoint = endpoints.get(endpoint_id);
+    eosio_assert(current_issued_dots <= Bondage::get_dots_limit(current_endpoint), "Dots limit exceeded");
 
     // Calculate amount of zap tokens that user will pay for dots
-    uint64_t price = Bondage::get_dots_price(endpoints.get(endpoint_id), total_issued_dots, dots);
+    uint64_t price = Bondage::get_dots_price(current_endpoint, current_issued_dots, dots);
 
     // Transfer subscriber tokens to zap.bondage address
     transfer_tokens(subscriber, _self, price, "bond");

@@ -13,10 +13,13 @@ class Dispatcher {
         void respond(account_name responder, uint64_t id, std::string params);
 
         //Buy subscription to provider endpoint
-        void subscribe(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots);
+        void subscribe(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots, std::string params);
 
         //Remove subscription
         void unsubscribe(account_name subscriber, account_name provider, std::string endpoint, bool from_sub);
+
+        //Cancel query execution
+        void cancelquery(account_name subscriber, uint64_t query_id);
 
     private:
         account_name _self;   
@@ -124,8 +127,9 @@ class Dispatcher {
         //Provider will receive zap tokens for escrowed dots
         //Dots will be removed from total issued of endpoint
         //Dots will be removed from subscriber holder
-        void release(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots) {
-            db::holderIndex holders(_self, subscriber);
+        void release(account_name payer, account_name subscriber, account_name provider, std::string endpoint, uint64_t dots) {
+            db::holderIndex sub_holders(_self, subscriber);
+            db::holderIndex pro_holders(_self, provider);
             db::endpointIndex endpoints(_self, provider);
             db::issuedIndex issued(_self, provider);
         
@@ -133,7 +137,7 @@ class Dispatcher {
             auto endpoints_iterator = endpoints_index.find(db::hash(provider, endpoint));
             auto issued_iterator = issued.find(endpoints_iterator->id);
 
-            auto holders_index = holders.get_index<N(byhash)>();
+            auto holders_index = sub_holders.get_index<N(byhash)>();
             auto holders_iterator = holders_index.find(db::hash(provider, endpoint));
 
             // Check that subscriber have bonded dots and his escrow dots are bigger or equal to dots for release
@@ -142,9 +146,9 @@ class Dispatcher {
             eosio_assert(holders_iterator->escrow >= dots, "Not enough escrow dots.");
  
             // Remove specified amount of dots from subscriber escrow
-            update_holder(holders, subscriber, provider, endpoint, 0, -dots);
-            update_holder(holders, provider, provider, endpoint, 0, dots);
-            update_issued(issued, subscriber, issued_iterator->endpointid, -dots);
+            update_holder(sub_holders, payer, provider, endpoint, 0, -dots);
+            update_holder(pro_holders, payer, provider, endpoint, dots, 0);
+            update_issued(issued, payer, issued_iterator->endpointid, -dots);
         }    
 
 };

@@ -170,7 +170,6 @@ describe('Main', function () {
             node.kill();
         })
     });
-
     describe('Contracts', function () {
         let node = new Node(false, false);
 
@@ -236,6 +235,47 @@ describe('Main', function () {
                 });
 
         }
+
+        function createSubscribeTransaction(endpoint, amount) {
+            return new Transaction()
+                .sender(node.getAccounts().user, 'active')
+                .receiver(node.getAccounts().main)
+                .action('subscribe')
+                .data({
+                    subscriber: node.getAccounts().user.name,
+                    provider: node.getAccounts().provider.name,
+                    endpoint: endpoint,
+                    dots: amount,
+                    params: 'some params'
+                });
+        }
+
+        function createUnsubscribeSubTransaction(endpoint) {
+            return new Transaction()
+                .sender(node.getAccounts().user, 'active')
+                .receiver(node.getAccounts().main)
+                .action('unsubscribe')
+                .data({
+                    subscriber: node.getAccounts().user.name,
+                    provider: node.getAccounts().provider.name,
+                    endpoint: endpoint,
+                    from_sub: 1
+                });
+        }
+
+        function createUnsubscribeProTransaction(endpoint) {
+            return new Transaction()
+                .sender(node.getAccounts().provider, 'active')
+                .receiver(node.getAccounts().main)
+                .action('unsubscribe')
+                .data({
+                    subscriber: node.getAccounts().user.name,
+                    provider: node.getAccounts().provider.name,
+                    endpoint: endpoint,
+                    from_sub: 0
+                });
+        }
+
 
         beforeEach(function (done) {
             this.timeout(30000);
@@ -404,6 +444,97 @@ describe('Main', function () {
 
             await expect(foundQueryData.query).to.be.equal('q');
         }).timeout(10000);
+
+        it('#subscribe()', async () => {
+            let eos = await node.connect();
+            await createNewProviderTransaction('test', 1)
+                .merge(createAddEndpointTransaction('test_endpoint', ''))
+                .merge(createBondTransaction('test_endpoint', 1))
+                .merge(createSubscribeTransaction('test_endpoint', 1))
+                .execute(eos);
+
+
+            let s = await getRowsByPrimaryKey(eos, node, {
+                scope: node.getAccounts().provider.name,
+                table_name: 'subscription',
+                table_key: 'id'
+            });
+
+            await expect(s.rows.length).to.be.equal(1);
+        });
+
+        it('#unscubscribe() - from subscriber', async () => {
+            let eos = await node.connect();
+            await createNewProviderTransaction('test', 1)
+                .merge(createAddEndpointTransaction('test_endpoint', ''))
+                .merge(createBondTransaction('test_endpoint', 1))
+                .merge(createSubscribeTransaction('test_endpoint', 1))
+                //.merge(createUnsubscribeTransaction('test_endpoint', true))
+                .execute(eos);
+
+            await createUnsubscribeSubTransaction('test_endpoint').execute(eos);
+
+
+            let s = await getRowsByPrimaryKey(eos, node, {
+                scope: node.getAccounts().provider.name,
+                table_name: 'subscription',
+                table_key: 'id'
+            });
+
+            let p_holder = await getRowsByPrimaryKey(eos, node, {
+                scope: node.getAccounts().provider.name,
+                table_name: 'holder',
+                table_key: 'id'
+            });
+
+            let s_holder = await getRowsByPrimaryKey(eos, node, {
+                scope: node.getAccounts().user.name,
+                table_name: 'holder',
+                table_key: 'id'
+            });
+
+            await expect(s.rows.length).to.be.equal(0);
+            await expect(p_holder.rows[0].dots).to.be.equal(1);
+            await expect(p_holder.rows[0].escrow).to.be.equal(0);
+            await expect(s_holder.rows[0].dots).to.be.equal(0);
+            await expect(s_holder.rows[0].escrow).to.be.equal(0);
+        });
+
+        it('#unscubscribe() - from provider', async () => {
+            let eos = await node.connect();
+            await createNewProviderTransaction('test', 1)
+                .merge(createAddEndpointTransaction('test_endpoint', ''))
+                .merge(createBondTransaction('test_endpoint', 1))
+                .merge(createSubscribeTransaction('test_endpoint', 1))
+                //.merge(createUnsubscribeTransaction('test_endpoint', false))
+                .execute(eos);
+
+            await createUnsubscribeProTransaction('test_endpoint').execute(eos);
+
+            let s = await getRowsByPrimaryKey(eos, node, {
+                scope: node.getAccounts().provider.name,
+                table_name: 'subscription',
+                table_key: 'id'
+            });
+
+            let p_holder = await getRowsByPrimaryKey(eos, node, {
+                scope: node.getAccounts().provider.name,
+                table_name: 'holder',
+                table_key: 'id'
+            });
+
+            let s_holder = await getRowsByPrimaryKey(eos, node, {
+                scope: node.getAccounts().user.name,
+                table_name: 'holder',
+                table_key: 'id'
+            });
+
+            await expect(s.rows.length).to.be.equal(0);
+            await expect(p_holder.rows[0].dots).to.be.equal(1);
+            await expect(p_holder.rows[0].escrow).to.be.equal(0);
+            await expect(s_holder.rows[0].dots).to.be.equal(0);
+            await expect(s_holder.rows[0].escrow).to.be.equal(0);
+        });
 
         after(function () {
             node.kill();
