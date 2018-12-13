@@ -63,6 +63,10 @@ private:
         ).send();
     }
 
+    static int64_t get_dots_limit(db::endpoint endpoint) {
+        return endpoint.functions[endpoint.functions.size() - 1];
+    }
+
     //Calculate price of specified dot number for specified endpoint
     static int64_t calc_dot_price(db::endpoint endpoint, uint64_t dot) {
         uint64_t index = 0;
@@ -87,11 +91,20 @@ private:
         return -1;
     }
 
+    /**
+     * Function update total issued dots for endpoint
+     *
+     * @param issued table that contains issued dots for endpoint
+     * @param payer user that will pay for storage
+     * @param endpoint_id id of endpoint
+     * @param dots dots to add
+     * @return issued dot before update
+     */
     uint64_t update_issued(db::issuedIndex &issued, account_name payer, uint64_t endpoint_id, int64_t dots) {
         auto issued_iterator = issued.find(endpoint_id);
-        uint64_t total_issued_dots = 0;
+        uint64_t issued_dots_before_update = 0;
         if (issued_iterator != issued.end()) {
-            total_issued_dots = issued_iterator->dots;
+            issued_dots_before_update = issued_iterator->dots;
             issued.modify(issued_iterator, payer, [&](auto &i) {
                 i.dots = i.dots + dots;
             });
@@ -103,7 +116,7 @@ private:
             });
             print_f("New issued created, endpointid = %; dots = %.\n", endpoint_id, dots);
         }
-        return total_issued_dots;
+        return issued_dots_before_update;
     }
 
     auto update_holder(db::holderIndex &holders, account_name payer, account_name provider, std::string endpoint,

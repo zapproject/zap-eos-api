@@ -3,6 +3,7 @@
 
 #define QUERY_CALL_PRICE 1
 #define DOT_SECONDS 60
+#define MIN_SUB_PRICE 1
 
 void Dispatcher::query(account_name subscriber, account_name provider, std::string endpoint, std::string query, bool onchain_provider, bool onchain_subscriber, uint128_t timestamp) {
     require_auth(subscriber);
@@ -30,6 +31,7 @@ void Dispatcher::query(account_name subscriber, account_name provider, std::stri
     }   
 }
 
+// Don't need to use different function for different params, json can be passed
 void Dispatcher::respond(account_name responder, uint64_t id, std::string params, account_name subscriber) {
     require_auth(responder);
 
@@ -48,7 +50,7 @@ void Dispatcher::respond(account_name responder, uint64_t id, std::string params
         //TODO: implement event for offchain subscriber
     }
 
-    Dispatcher::release(q->subscriber, q->provider, q->endpoint, QUERY_CALL_PRICE);
+    Dispatcher::release(responder, q->subscriber, q->provider, q->endpoint, QUERY_CALL_PRICE);
 
     bool deleted = Dispatcher::delete_query(queries, q->id);
     if (deleted) {
@@ -58,7 +60,7 @@ void Dispatcher::respond(account_name responder, uint64_t id, std::string params
     }
 }
 
-void Dispatcher::subscribe(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots) {
+void Dispatcher::subscribe(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots, std::string params) {
     require_auth(subscriber);
 
     eosio_assert(dots > 0, "Dots number must be bigger than zero.");
@@ -97,18 +99,43 @@ void Dispatcher::unsubscribe(account_name subscriber, account_name provider, std
     auto sub_hash_index = subscriptions.get_index<N(byhash)>();
     auto sub_iterator = sub_hash_index.find(db::hash(subscriber, endpoint));
 
-    eosio_assert(sub_iterator != sub_hash_index.end(), "Can not found subscribtion.");
+    eosio_assert(sub_iterator != sub_hash_index.end(), "Can not found subscription.");
   
     time current_time = now();
     if (current_time < sub_iterator->end) {
         time passed = current_time - sub_iterator->start;
         uint64_t dots_used = passed / DOT_SECONDS;
-        Dispatcher::release(subscriber, provider, endpoint, dots_used);
+        if (dots_used <= 0) {
+            dots_used = MIN_SUB_PRICE;
+        }
+        Dispatcher::release(from_sub ? subscriber : provider, subscriber, provider, endpoint, dots_used);
     } else {
-        Dispatcher::release(subscriber, provider, endpoint, sub_iterator->price);
+        Dispatcher::release(from_sub ? subscriber : provider, subscriber, provider, endpoint, sub_iterator->price);
     }
+
     auto main_iterator = subscriptions.find(sub_iterator->id);
     subscriptions.erase(main_iterator);
+}
+
+void Dispatcher::cancelquery(account_name subscriber, uint64_t query_id) {
+    require_auth(subscriber);
+
+    db::holderIndex holders(_self, subscriber);
+
+    auto query_iterator = queries.find(query_id);
+
+    eosio_assert(query_iterator != queries.end(), "Query not found.");
+
+    // return dots to user
+    Dispatcher::update_holder(holders, subscriber, query_iterator->provider, query_iterator->endpoint, QUERY_CALL_PRICE, -QUERY_CALL_PRICE);
+
+    // remove query call
+    bool deleted = Dispatcher::delete_query(queries, query_iterator->id);
+    if (deleted) {
+        print_f("Query responded successfully, id = %", query_iterator->id);
+    } else {
+        print_f("Query responded with error while deleting, id = %", query_iterator->id);
+    }
 }
 
 

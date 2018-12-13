@@ -30,10 +30,18 @@ void Main::respond(account_name responder, uint64_t id, std::string params, acco
     Main::dispatcher.respond(responder, id, params, subscriber);
 }
 
-void Main::subscribe(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots) {
-    Main::dispatcher.subscribe(subscriber, provider, endpoint, dots);
+void Main::subscribe(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots, std::string params) {
+    Main::dispatcher.subscribe(subscriber, provider, endpoint, dots, params);
 }
 
 void Main::unsubscribe(account_name subscriber, account_name provider, std::string endpoint, bool from_sub) {
     Main::dispatcher.unsubscribe(subscriber, provider, endpoint, from_sub);
+}
+
+void Main::setparams(account_name provider, std::string specifier, std::vector<std::string> params) {
+    Main::registry.setparams(provider, specifier, params);
+}
+
+void Main::cancelquery(account_name subscriber, uint64_t query_id) {
+    Main::dispatcher.cancelquery(subscriber, query_id);
 }

@@ -146,6 +146,19 @@ namespace db {
         EOSLIB_SERIALIZE(subscription, (id)(price)(start)(end)(subscriber)(endpoint))
     };
 
+    //@abi table params i64
+    struct [[eosio::table]] params {
+        uint64_t id;
+        account_name provider;
+        std::string endpoint;
+        std::vector<std::string> values;
+
+        uint64_t primary_key() const { return id; }
+        key256 by_hash() const { return db::hash(provider, endpoint); }
+
+        EOSLIB_SERIALIZE(params, (id)(provider)(endpoint)(values))
+    };
+
 
     typedef multi_index<"provider"_n, provider> providerIndex;
 
@@ -168,7 +181,10 @@ namespace db {
     typedef multi_index<"subscription"_n, subscription,
                 indexed_by<"byhash"_n, const_mem_fun<subscription, key256, &subscription::get_hash>>
             > subscriptionIndex;
- 
+
+    typedef multi_index<N(params), params,
+            indexed_by<N(byhash), const_mem_fun<params, key256, &params::by_hash>>
+    > paramsIndex;
 }
 
 #endif
