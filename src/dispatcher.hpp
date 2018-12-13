@@ -7,10 +7,10 @@ class Dispatcher {
  	Dispatcher(account_name n): _self(n), queries(n, n) { }
 
         //Query provider data
-        void query(account_name subscriber, account_name provider, std::string endpoint, std::string query, bool onchain_provider, bool onchain_subscriber);
+        void query(account_name subscriber, account_name provider, std::string endpoint, std::string query, bool onchain_provider, bool onchain_subscriber, uint128_t timestamp);
 
         //Respond to query
-        void respond(account_name responder, uint64_t id, std::string params);
+        void respond(account_name responder, uint64_t id, std::string params, account_name subscriber);
 
         //Buy subscription to provider endpoint
         void subscribe(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots, std::string params);
@@ -95,6 +95,7 @@ class Dispatcher {
                 print_f("Holder updated, added value = %.\n", dots);
             } else {
                 holders.emplace(payer, [&](auto& h) {
+                    h.id = holders.available_primary_key();
                     h.provider = provider;
                     h.endpoint = endpoint;
                     h.dots = dots;

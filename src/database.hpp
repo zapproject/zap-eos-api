@@ -66,8 +66,7 @@ namespace db {
         std::vector<int64_t> functions;
 
         uint64_t primary_key() const { return id; }
-           
-        // TODO: EXPERIMENTAL FEATURE
+
         // I haven't found any examples of key256 usage, but, according doc, multi_index supports 256 bytes secondary keys 
         // this secondary key allows to find item with specified provider and specifier by using find() method
         key256 by_hash() const { return db::hash(provider, specifier); }
@@ -90,15 +89,17 @@ namespace db {
     //@abi table holder i64
     //Table for user holders, created in context of user
     struct [[eosio::table]] holder {
+        uint64_t id;
         account_name provider;
         std::string endpoint;
         uint64_t dots;
         uint64_t escrow;
 
-        uint64_t primary_key() const { return provider; }
+        uint64_t primary_key() const { return id; }
+        uint64_t get_provider() const { return provider; }
         key256 get_hash() const { return db::hash(provider, endpoint); }
 
-        EOSLIB_SERIALIZE(holder, (provider)(endpoint)(dots)(escrow))
+        EOSLIB_SERIALIZE(holder, (id)(provider)(endpoint)(dots)(escrow))
     };
 
     //@abi table issued i64
@@ -121,10 +122,13 @@ namespace db {
         std::string endpoint;
         std::string data;
         bool onchain;
+        uint128_t timestamp;
 
         uint64_t primary_key() const { return id; }
+        uint64_t get_provider() const { return provider; }
+        uint128_t get_timestamp() const { return timestamp; }
 
-        EOSLIB_SERIALIZE(qdata, (id)(provider)(subscriber)(endpoint)(data)(onchain))
+        EOSLIB_SERIALIZE(qdata, (id)(provider)(subscriber)(endpoint)(data)(onchain)(timestamp))
     };
 
     //@abi table subscription i64
@@ -156,22 +160,26 @@ namespace db {
     };
 
 
-    typedef multi_index<N(provider), provider> providerIndex;
+    typedef multi_index<"provider"_n, provider> providerIndex;
 
-    typedef multi_index<N(endpoint), endpoint,
-                indexed_by<N(byhash), const_mem_fun<endpoint, key256, &endpoint::by_hash>>
+    typedef multi_index<"endpoint"_n, endpoint,
+                indexed_by<"byhash"_n, const_mem_fun<endpoint, key256, &endpoint::by_hash>>
             > endpointIndex;
 
-    typedef multi_index<N(holder), holder,
-                indexed_by<N(byhash), const_mem_fun<holder, key256, &holder::get_hash>>
+    typedef multi_index<"holder"_n, holder,
+                indexed_by<"byhash"_n, const_mem_fun<holder, key256, &holder::get_hash>>,
+                indexed_by<"byprovider"_n, const_mem_fun<holder, uint64_t, &holder::get_provider>>
             > holderIndex;
 
-    typedef multi_index<N(issued), issued> issuedIndex;
+    typedef multi_index<"issued"_n, issued> issuedIndex;
 
-    typedef multi_index<N(qdata), qdata> queryIndex;
+    typedef multi_index<"qdata"_n, qdata,
+                indexed_by<"byprovider"_n, const_mem_fun<qdata, uint64_t, &qdata::get_provider>>,
+                indexed_by<"bytimestamp"_n, const_mem_fun<qdata, uint128_t, &qdata::get_timestamp>>
+            > queryIndex;
 
-    typedef multi_index<N(subscription), subscription,
-                indexed_by<N(byhash), const_mem_fun<subscription, key256, &subscription::get_hash>>
+    typedef multi_index<"subscription"_n, subscription,
+                indexed_by<"byhash"_n, const_mem_fun<subscription, key256, &subscription::get_hash>>
             > subscriptionIndex;
 
     typedef multi_index<N(params), params,

@@ -5,7 +5,7 @@
 #define DOT_SECONDS 60
 #define MIN_SUB_PRICE 1
 
-void Dispatcher::query(account_name subscriber, account_name provider, std::string endpoint, std::string query, bool onchain_provider, bool onchain_subscriber) {
+void Dispatcher::query(account_name subscriber, account_name provider, std::string endpoint, std::string query, bool onchain_provider, bool onchain_subscriber, uint128_t timestamp) {
     require_auth(subscriber);
 
     uint64_t bound = Dispatcher::get_bound_dots(subscriber, provider, endpoint);
@@ -24,6 +24,7 @@ void Dispatcher::query(account_name subscriber, account_name provider, std::stri
             q.endpoint = endpoint;
             q.data = query;
             q.onchain = onchain_subscriber;
+            q.timestamp = timestamp;
         });
 
         print_f("Query called: id = %, sub = %, provider = %, endpoint = %;", availableKey, name{subscriber}, name{provider}, endpoint);
@@ -31,7 +32,7 @@ void Dispatcher::query(account_name subscriber, account_name provider, std::stri
 }
 
 // Don't need to use different function for different params, json can be passed
-void Dispatcher::respond(account_name responder, uint64_t id, std::string params) {
+void Dispatcher::respond(account_name responder, uint64_t id, std::string params, account_name subscriber) {
     require_auth(responder);
 
     auto q = queries.find(id);

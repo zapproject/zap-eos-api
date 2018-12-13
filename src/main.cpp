@@ -22,12 +22,12 @@ void Main::estimate(account_name provider, std::string endpoint, uint64_t dots) 
 }
 
 void Main::query(account_name subscriber, account_name provider, std::string endpoint, std::string query,
-                 bool onchain_provider, bool onchain_subscriber) {
-    Main::dispatcher.query(subscriber, provider, endpoint, query, onchain_provider, onchain_subscriber);
+                 bool onchain_provider, bool onchain_subscriber, uint128_t timestamp) {
+    Main::dispatcher.query(subscriber, provider, endpoint, query, onchain_provider, onchain_subscriber, timestamp);
 }
 
-void Main::respond(account_name responder, uint64_t id, std::string params) {
-    Main::dispatcher.respond(responder, id, params);
+void Main::respond(account_name responder, uint64_t id, std::string params, account_name subscriber) {
+    Main::dispatcher.respond(responder, id, params, subscriber);
 }
 
 void Main::subscribe(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots, std::string params) {
