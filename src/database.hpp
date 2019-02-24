@@ -16,12 +16,12 @@ using namespace eosio;
 
 namespace db {
 
-    static key256 hash(account_name provider, std::string specifier);
-    static std::array<uint128_t, 2> checksum256_to_uint128array(checksum256 c);
+    static key256 hash(name provider, std::string specifier);
+    static std::array<uint128_t, 2> checksum256_to_uint128array(capi_checksum256 c);
 
     // TODO: must be reviewed
     // Does this hash will be always unique?
-    static key256 hash(account_name provider, std::string specifier) {
+    static key256 hash(name provider, std::string specifier) {
         // TODO: std::to_string currently not working with eosio.cdt compiler
         // https://github.com/EOSIO/eosio.cdt/issues/95, then use name{}.to_string()
         std::string provider_string = name{provider}.to_string();
@@ -31,7 +31,7 @@ namespace db {
         char *data = new char[result_size];
         strcpy(data, concatenated.c_str());
 
-        checksum256 hash_result;
+        capi_checksum256 hash_result;
         sha256(data, result_size, &hash_result);
 
         delete [] data;
@@ -41,7 +41,7 @@ namespace db {
     // TODO: must be reviewed
     // !!! according this doc https://developers.eos.io/eosio-cpp/docs/random-number-generation checksum element is 4 bytes (uin32_t == int) length
     // !!! but in sources it is 1 byte length (uint8_t == unsigned char)
-    static std::array<uint128_t, 2> checksum256_to_uint128array(checksum256 c) {
+    static std::array<uint128_t, 2> checksum256_to_uint128array(capi_checksum256 c) {
         uint128_t first_word = 0;
         uint128_t second_word = 0;
 
@@ -60,9 +60,9 @@ namespace db {
     //Table for provider endpoints, created in context of specified provider
     struct [[eosio::table]] endpoint {
         uint64_t id;
-        account_name provider;
+        name provider;
         std::string specifier;
-        account_name broker;
+        name broker;
         std::vector<int64_t> functions;
 
         uint64_t primary_key() const { return id; }
@@ -78,11 +78,11 @@ namespace db {
     //@abi table provider i64
     //Table for providers, created in context of zap registry contract
     struct [[eosio::table]] provider {
-        account_name user;
+        name user;
         std::string title;
         uint64_t key;
 
-        uint64_t primary_key() const { return user; }
+        uint64_t primary_key() const { return user.value; }
 
         EOSLIB_SERIALIZE(provider, (user)(title)(key))
     };
@@ -90,12 +90,12 @@ namespace db {
     //@abi table holder i64
     //Table for user holders, created in context of user
     struct [[eosio::table]] holder {
-        account_name provider;
+        name provider;
         std::string endpoint;
         uint64_t dots;
         uint64_t escrow;
 
-        uint64_t primary_key() const { return provider; }
+        uint64_t primary_key() const { return provider.value; }
         key256 get_hash() const { return db::hash(provider, endpoint); }
 
         EOSLIB_SERIALIZE(holder, (provider)(endpoint)(dots)(escrow))
@@ -116,8 +116,8 @@ namespace db {
     //Table to store user queries
     struct [[eosio::table]] qdata {
         uint64_t id;
-        account_name provider;
-        account_name subscriber;
+        name provider;
+        name subscriber;
         std::string endpoint;
         std::string data;
         bool onchain;
@@ -133,7 +133,7 @@ namespace db {
         uint64_t price;
         uint64_t start;
         uint64_t end;
-        account_name subscriber;
+        name subscriber;
         std::string endpoint;
 
         uint64_t primary_key() const { return id; }
@@ -143,22 +143,22 @@ namespace db {
     };
 
 
-    typedef multi_index<N(provider), provider> providerIndex;
+    typedef multi_index<"provider"_n, provider> providerIndex;
 
-    typedef multi_index<N(endpoint), endpoint,
-                indexed_by<N(byhash), const_mem_fun<endpoint, key256, &endpoint::by_hash>>
+    typedef multi_index<"endpoint"_n, endpoint,
+                indexed_by<"byhash"_n, const_mem_fun<endpoint, key256, &endpoint::by_hash>>
             > endpointIndex;
 
-    typedef multi_index<N(holder), holder,
-                indexed_by<N(byhash), const_mem_fun<holder, key256, &holder::get_hash>>
+    typedef multi_index<"holder"_n, holder,
+                indexed_by<"byhash"_n, const_mem_fun<holder, key256, &holder::get_hash>>
             > holderIndex;
 
-    typedef multi_index<N(issued), issued> issuedIndex;
+    typedef multi_index<"issued"_n, issued> issuedIndex;
 
-    typedef multi_index<N(qdata), qdata> queryIndex;
+    typedef multi_index<"qdata"_n, qdata> queryIndex;
 
-    typedef multi_index<N(subscription), subscription,
-                indexed_by<N(byhash), const_mem_fun<subscription, key256, &subscription::get_hash>>
+    typedef multi_index<"subscription"_n, subscription,
+                indexed_by<"byhash"_n, const_mem_fun<subscription, key256, &subscription::get_hash>>
             > subscriptionIndex;
  
 }

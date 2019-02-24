@@ -1,36 +1,41 @@
 cmake_minimum_required(VERSION 3.5)
 project(zap VERSION 0.1.0)
 
-# if no wasm root is given use default path
-if(EOSIO_WASMSDK_ROOT STREQUAL "" OR NOT EOSIO_WASMSDK_ROOT)
-   set(EOSIO_WASMSDK_ROOT /usr/local/eosio.cdt)
-endif()
+find_package(eosio.cdt)
 
-set(BUILD_DIR build/main)
+set(BUILD_DIR build)
 set(SRC_DIR src)
-set(FLAG_ABIGEN --abigen)
-set(ABIGEN_CMD "eosio-abigen ${SRC_DIR}/main.cpp --output=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/main.abi")
 
 # executables output directory
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${BUILD_DIR})
-
-# append the path receiver the module receiver include
-list(APPEND CMAKE_MODULE_PATH ${EOSIO_WASMSDK_ROOT}/lib/cmake)
+set(CMAKE_TOKEN_RUNTIME_OUTPUT_DIRECTORY ${BUILD_DIR}/token)
+set(CMAKE_MAIN_RUNTIME_OUTPUT_DIRECTORY ${BUILD_DIR}/main)
 
 include_directories(${SRC_DIR})
-include_directories(${EOSIO_WASMSDK_ROOT}/include)
 
-include(EosioWasmToolchain)
+add_contract( main main ${SRC_DIR}/main.cpp )
+add_contract( eosio.token eosio.token ${SRC_DIR}/eosio.token.cpp )
 
-set(CMAKE_C_FLAGS "--abigen")
-set(CMAKE_CXX_FLAGS "--abigen")
+add_custom_command(
+        TARGET main.wasm POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+                ./main.abi
+                ${CMAKE_MAIN_RUNTIME_OUTPUT_DIRECTORY}/main.abi)
 
-add_executable(main.wasm ${SRC_DIR}/main.cpp)
-add_custom_target(abigen COMMAND make -f makefile.self l_genabi)
-add_dependencies(main.wasm abigen)
+add_custom_command(
+        TARGET eosio.token.wasm POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+                ./eosio.token.abi
+                ${CMAKE_TOKEN_RUNTIME_OUTPUT_DIRECTORY}/eosio.token.abi)
 
-#TODO: not working
-#add_custom_target(abigen COMMAND eosio-abigen ${SRC_DIR}/main.cpp)
-#add_dependencies(main.wasm abigen)
+
+set_target_properties(eosio.token.wasm
+   PROPERTIES
+   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_TOKEN_RUNTIME_OUTPUT_DIRECTORY}")
+
+set_target_properties(main.wasm
+   PROPERTIES
+   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_MAIN_RUNTIME_OUTPUT_DIRECTORY}")
+
+
 
 

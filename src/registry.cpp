@@ -1,11 +1,11 @@
 #include "registry.hpp"
 
-void Registry::newprovider(account_name provider, std::string title, uint64_t key) {
+void Registry::newprovider(name provider, std::string title, uint64_t key) {
     require_auth(provider);
 
-    db::providerIndex providers(_self, _self);
+    db::providerIndex providers(_self, _self.value);
 
-    print_f("new provider: user = %, title = %, public_key = %", name{provider}, title, key);
+    print_f("new provider: user = %, title = %, public_key = %", name{provider}, title.c_str(), key);
 
     // Save new provider
     // Will throw exception if provider exists
@@ -16,14 +16,14 @@ void Registry::newprovider(account_name provider, std::string title, uint64_t ke
     });
 }
 
-void Registry::addendpoint(account_name provider, std::string specifier, std::vector<int64_t> functions, account_name broker) {
+void Registry::addendpoint(name provider, std::string specifier, std::vector<int64_t> functions, name broker) {
     require_auth(provider);
 
-    db::providerIndex providers(_self, _self);
-    db::endpointIndex endpoints(_self, provider);
+    db::providerIndex providers(_self, _self.value);
+    db::endpointIndex endpoints(_self, provider.value);
 
     // Check that provider exists
-    auto iterator = providers.find(provider);
+    auto iterator = providers.find(provider.value);
     eosio_assert(iterator != providers.end(), "Provider not found!");
 
     // Check that provider doesn't have this specifier 

@@ -1,21 +1,21 @@
 #PROJEC DIRECTORY
 PROJECT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-#EOS SOURCES DIRECTORY (SOURCES MUST BE BUILDED)
-EOS_DIR = /home/kostya/blockchain/eos
-#DIRECTORY OF DEFAULT TOKEN CONTRACT
-TOKEN_DIR = $(EOS_DIR)/build/contracts/eosio.token
 
 install:
 	-mkdir $(PROJECT_DIR)/build
 	-mkdir $(PROJECT_DIR)/build/main
+	-mkdir $(PROJECT_DIR)/build/token
 
 compile:
 	-mkdir $(PROJECT_DIR)/build
 	-mkdir $(PROJECT_DIR)/build/main
+	-mkdir $(PROJECT_DIR)/build/token
 	eosio-cpp -o $(PROJECT_DIR)/build/main/main.wasm $(PROJECT_DIR)/src/main.cpp --abigen
+	eosio-cpp -o $(PROJECT_DIR)/build/token/eosio.token.wasm $(PROJECT_DIR)/src/eosio.token.cpp --abigen
 
-l_genabi:
-	eosiocpp -g $(PROJECT_DIR)/build/main/main.abi $(PROJECT_DIR)/src/main.cpp
+genabi:
+	eosio-abigen $(PROJECT_DIR)/src/main.cpp --contract=Main --output=$(PROJECT_DIR)/build/main/main.abi
+	eosio-abigen $(PROJECT_DIR)/src/eosio.token.cpp --contract=eosio.token --output=$(PROJECT_DIR)/build/token/eosio.token.abi
 
 #                          #
 # SMART CONTRACTS COMMANDS #

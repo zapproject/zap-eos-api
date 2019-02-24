@@ -11,9 +11,7 @@ const execSync = require('child_process').execSync;
 const PROJECT_PATH = path.join(__dirname + '/..');
 
 //TODO: receive dynamically
-const NODEOS_PATH = '/home/kostya/blockchain/eos/build/programs/nodeos';
-const EOS_DIR = '/home/kostya/blockchain/eos';
-const TOKEN_DIR = EOS_DIR + '/build/contracts/eosio.token';
+const TOKEN_DIR = PROJECT_PATH + '/build/token';
 
 const ACC_TEST_PRIV_KEY = '5KfFufnUThaEeqsSeMPt27Poan5g8LUaEorsC1hHm1FgNJfr3sX';
 const ACC_OWNER_PRIV_KEY = '5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3';
@@ -34,7 +32,7 @@ function findElement(array, field, value) {
 
 class TestNode extends Node {
     constructor(verbose, recompile) {
-        super({verbose: verbose, nodeos_path: NODEOS_PATH, key_provider: [ACC_TEST_PRIV_KEY, ACC_OWNER_PRIV_KEY]});
+        super({verbose: verbose, key_provider: [ACC_TEST_PRIV_KEY, ACC_OWNER_PRIV_KEY]});
 
         this.recompile = recompile;
 

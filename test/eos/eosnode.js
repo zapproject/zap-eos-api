@@ -26,7 +26,7 @@ function checkTimeout(startTime, timeout) {
 
 
 class Node {
-    constructor({verbose, key_provider, nodeos_path}) {
+    constructor({verbose, key_provider}) {
         this.eos_test_config = {
             chainId: null, // 32 byte (64 char) hex string
             keyProvider: key_provider, // WIF string or array of keys..
@@ -40,7 +40,6 @@ class Node {
         this.verbose = verbose;
         this.running = false;
         this.instance = null;
-        this.nodeos_path = nodeos_path;
     }
 
     async _waitNodeStartup(timeout) {
@@ -75,7 +74,7 @@ class Node {
         }
 
         // use spawn function because nodeos has infinity output
-        this.instance = spawn(this.nodeos_path + '/nodeos', ['--contracts-console', '--delete-all-blocks', '--access-control-allow-origin=*']);
+        this.instance = spawn('nodeos', ['--contracts-console', '--delete-all-blocks', '--access-control-allow-origin=*']);
 
         // wait until node is running
         while (this.running === false) {

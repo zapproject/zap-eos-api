@@ -8,18 +8,18 @@ using namespace eosio;
 class Bondage {
 public:
 
-    Bondage(account_name n) : _self(n) {}
+    Bondage(name n) : _self(n) {}
 
     // MAIN METHODS
 
     //Buy dots for specified endpoint
-    void bond(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots);
+    void bond(name subscriber, name provider, std::string endpoint, uint64_t dots);
 
     //Withdraw dots for specified provider
-    void unbond(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots);
+    void unbond(name subscriber, name provider, std::string endpoint, uint64_t dots);
 
     //Estimate price of dots (in integral zap tokens) for specified provider
-    void estimate(account_name provider, std::string endpoint, uint64_t dots);
+    void estimate(name provider, std::string endpoint, uint64_t dots);
 
 
     //Calc price of dots for bonding
@@ -45,20 +45,20 @@ public:
     }
 
 private:
-    account_name _self;
+    name _self;
 
     //TODO: must be changed to prod account
-    const account_name zap_token = N(zap.token);
+    const name zap_token = "zap.token"_n;
 
     //Convert specified amount of tokens to <asset> structure
     eosio::asset to_asset(uint64_t tokensAmount) {
-        return asset(tokensAmount, symbol_type(string_to_symbol(ZAP_TOKEN_DECIMALS, ZAP_TOKEN_SYMBOL)));
+        return asset(tokensAmount, symbol(symbol_code(ZAP_TOKEN_SYMBOL), ZAP_TOKEN_DECIMALS));
     }
 
-    void transfer_tokens(account_name from, account_name to, uint64_t amount, std::string memo) {
+    void transfer_tokens(name from, name to, uint64_t amount, std::string memo) {
         action(
-                permission_level{from, N(active)},
-                zap_token, N(transfer),
+                permission_level{from, "active"_n},
+                zap_token, "transfer"_n,
                 std::make_tuple(from, to, to_asset(amount), memo)
         ).send();
     }
@@ -87,7 +87,7 @@ private:
         return -1;
     }
 
-    uint64_t update_issued(db::issuedIndex &issued, account_name payer, uint64_t endpoint_id, int64_t dots) {
+    uint64_t update_issued(db::issuedIndex &issued, name payer, uint64_t endpoint_id, int64_t dots) {
         auto issued_iterator = issued.find(endpoint_id);
         uint64_t total_issued_dots = 0;
         if (issued_iterator != issued.end()) {
@@ -106,9 +106,9 @@ private:
         return total_issued_dots;
     }
 
-    auto update_holder(db::holderIndex &holders, account_name payer, account_name provider, std::string endpoint,
+    auto update_holder(db::holderIndex &holders, name payer, name provider, std::string endpoint,
                        int64_t dots, int64_t escrow) {
-        auto holders_index = holders.get_index<N(byhash)>();
+        auto holders_index = holders.get_index<"byhash"_n>();
         auto holders_iterator = holders_index.find(db::hash(provider, endpoint));
         if (holders_iterator != holders_index.end()) {
             holders_index.modify(holders_iterator, payer, [&](auto &h) {
@@ -123,7 +123,7 @@ private:
                 h.dots = dots;
                 h.escrow = escrow;
             });
-            print_f("New holder created, provider = %; endpoint = %; dots = %.\n", name{provider}, endpoint, dots);
+            print("New holder created, provider = ", name{provider}, "; endpoint=", endpoint.c_str(), "; dots=", dots, ".\n");
         }
         return holders_iterator;
     }
