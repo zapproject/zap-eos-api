@@ -1,12 +1,10 @@
-#pragma once
-
 #include "bondage.cpp"
 #include "registry.cpp"
 #include "dispatcher.cpp"
 
 using namespace eosio;
 
-class [[eosio::contract("Main")]] Main : public contract {
+class [[eosio::contract("main")]] main : public contract {
 public:
     using contract::contract;
 
@@ -60,5 +58,3 @@ private:
     Registry registry = Registry(get_self());
     Dispatcher dispatcher = Dispatcher(get_self());
 };
-
-EOSIO_DISPATCH(Main, (newprovider)(addendpoint)(bond)(unbond)(estimate)(query)(respond)(subscribe)(unsubscribe))

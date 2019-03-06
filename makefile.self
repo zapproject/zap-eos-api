@@ -14,7 +14,7 @@ compile:
 	eosio-cpp -o $(PROJECT_DIR)/build/token/eosio.token.wasm $(PROJECT_DIR)/src/eosio.token.cpp --abigen
 
 genabi:
-	eosio-abigen $(PROJECT_DIR)/src/main.cpp --contract=Main --output=$(PROJECT_DIR)/build/main/main.abi
+	eosio-abigen $(PROJECT_DIR)/src/main.cpp --contract=main --output=$(PROJECT_DIR)/build/main/main.abi
 	eosio-abigen $(PROJECT_DIR)/src/eosio.token.cpp --contract=eosio.token --output=$(PROJECT_DIR)/build/token/eosio.token.abi
 
 #                          #

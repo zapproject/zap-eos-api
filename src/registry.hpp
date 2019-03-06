@@ -1,5 +1,3 @@
-#pragma once
-
 #include "database.hpp"
 
 using namespace eosio;
