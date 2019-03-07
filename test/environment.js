@@ -6,7 +6,9 @@ const Transaction = require('./eos/transaction.js');
 const EventListener = require('./eos/eventreader.js');
 
 const execSync = require('child_process').execSync;
+const JsSignatureProvider = require('eosjs/dist/eosjs-jssig').default;
 
+console.log(JSON.stringify(JsSignatureProvider));
 
 const PROJECT_PATH = path.join(__dirname + '/..');
 
@@ -16,6 +18,7 @@ const TOKEN_DIR = PROJECT_PATH + '/build/token';
 const ACC_TEST_PRIV_KEY = '5KfFufnUThaEeqsSeMPt27Poan5g8LUaEorsC1hHm1FgNJfr3sX';
 const ACC_OWNER_PRIV_KEY = '5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3';
 
+const sig_p = new JsSignatureProvider([ACC_TEST_PRIV_KEY, ACC_OWNER_PRIV_KEY]);
 
 function findElement(array, field, value) {
     for (let i in array) {
@@ -32,7 +35,7 @@ function findElement(array, field, value) {
 
 class TestNode extends Node {
     constructor(verbose, recompile) {
-        super({verbose: verbose, key_provider: [ACC_TEST_PRIV_KEY, ACC_OWNER_PRIV_KEY]});
+        super({verbose: verbose, signature_provider: sig_p});
 
         this.recompile = recompile;
 
@@ -40,6 +43,10 @@ class TestNode extends Node {
         this.account_provider = new Account({account_name: 'provider'}).fromPrivateKey({private_key: ACC_TEST_PRIV_KEY});
         this.account_token = new Account({account_name: 'zap.token'}).fromPrivateKey({private_key: ACC_OWNER_PRIV_KEY});
         this.account_main = new Account({account_name: 'zap.main'}).fromPrivateKey({private_key: ACC_OWNER_PRIV_KEY});
+    }
+
+    setRunning() {
+       this.running = true;
     }
 
     async init() {
@@ -51,11 +58,12 @@ class TestNode extends Node {
             await this.compile();
         }
 
-        let eos = await this.connect();
-        await this.registerAccounts(eos);
-        await this.deploy(eos);
-        await this.issueTokens(eos);
-        await this.grantPermissions(eos);
+        await this.connect();
+        let api = this.getApi();
+        await this.registerAccounts(api);
+        // await this.deploy(api);
+        // await this.issueTokens(api);
+        // await this.grantPermissions(api);
     }
 
     async compile() {
@@ -63,12 +71,12 @@ class TestNode extends Node {
         execSync('make -f makefile.self compile', options);
     }
 
-    async registerAccounts(eos) {
+    async registerAccounts(api) {
         let results = [];
-        results.push(await this.account_user.register(eos));
-        results.push(await this.account_provider.register(eos));
-        results.push(await this.account_token.register(eos));
-        results.push(await this.account_main.register(eos));
+        results.push(await this.account_user.register(api));
+        results.push(await this.account_provider.register(api));
+        results.push(await this.account_token.register(api));
+        results.push(await this.account_main.register(api));
 
         return results;
     }

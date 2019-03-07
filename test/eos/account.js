@@ -18,29 +18,76 @@ class Account {
         return this;
     }
 
-    async register(eos) {
-        return await eos.transaction(tr => {
-            tr.newaccount({
+    async register(api) {
+        try {
+        const result = await api.transact({
+            actions: [{
+              account: 'eosio',
+              name: 'newaccount',
+              authorization: [{
+                actor: this.name,
+                permission: 'active',
+              }],
+              data: {
                 creator: 'eosio',
                 name: this.name,
-                owner: this.public_key,
-                active: this.public_key
-            });
-
-            tr.buyrambytes({
+                owner: {
+                  threshold: 1,
+                  keys: [{
+                    key: this.public_key,
+                    weight: 1
+                  }],
+                  accounts: [],
+                  waits: []
+                },
+                active: {
+                  threshold: 1,
+                  keys: [{
+                    key: this.public_key,
+                    weight: 1
+                  }],
+                  accounts: [],
+                  waits: []
+                },
+              },
+            },
+            {
+              account: 'eosio',
+              name: 'buyrambytes',
+              authorization: [{
+                actor: this.name,
+                permission: 'active',
+              }],
+              data: {
                 payer: 'eosio',
                 receiver: this.name,
-                bytes: 8192
-            });
-
-            tr.delegatebw({
+                bytes: 8192,
+              },
+            },
+            {
+              account: 'eosio',
+              name: 'delegatebw',
+              authorization: [{
+                actor: this.name,
+                permission: 'active',
+              }],
+              data: {
                 from: 'eosio',
                 receiver: this.name,
-                stake_net_quantity: '10.0000 SYS',
-                stake_cpu_quantity: '10.0000 SYS',
-                transfer: 0
-            });
-        })
+                stake_net_quantity: '1.0000 SYS',
+                stake_cpu_quantity: '1.0000 SYS',
+                transfer: false,
+              }
+            }]
+          }, {
+            blocksBehind: 3,
+            expireSeconds: 30,
+          });
+        } catch (e) {
+            console.log(e);
+        }
+
+        return result;
     }
 
     get name() {

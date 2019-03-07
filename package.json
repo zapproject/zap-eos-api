@@ -12,9 +12,10 @@
     "chai-as-promised": "^7.1.1",
     "demux": "^2.0.0",
     "demux-eos": "^2.0.0",
-    "eosjs": "^16.0.6",
+    "eosjs": "^20.0.0-beta3",
     "eosjs-ecc": "^4.0.4",
     "mocha": "^5.2.0",
+    "node-fetch": "^2.3.0",
     "sleep": "^5.2.3",
     "wast2wasm": "0.0.1"
   },

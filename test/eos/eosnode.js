@@ -1,6 +1,10 @@
 const Sleep = require('sleep');
-const Eos = require('eosjs');
 const spawn = require('child_process').spawn;
+
+const { Api, JsonRpc } = require('eosjs');
+const fetch = require('node-fetch');                            // node only; not needed in browsers
+const { TextDecoder, TextEncoder } = require('text-encoding');  // node, IE11 and IE Edge Browsers
+
 
 const STARTUP_TIMEOUT = 30000;
 const STARTUP_REQUESTS_DELAY = 100;
@@ -26,46 +30,12 @@ function checkTimeout(startTime, timeout) {
 
 
 class Node {
-    constructor({verbose, key_provider}) {
-        this.eos_test_config = {
-            chainId: null, // 32 byte (64 char) hex string
-            keyProvider: key_provider, // WIF string or array of keys..
-            httpEndpoint: 'http://127.0.0.1:8888',
-            expireInSeconds: 60,
-            broadcast: true,
-            verbose: verbose, // API activity
-            sign: true
-        };
-
+   
+    constructor({verbose, signature_provider}) {
         this.verbose = verbose;
         this.running = false;
         this.instance = null;
-    }
-
-    async _waitNodeStartup(timeout) {
-        // wait for block production
-        let startTime = new Date();
-        let eos = Eos(this.eos_test_config);
-        while (true) {
-            try {
-                let res = await eos.getInfo({});
-                if (res.head_block_producer) {
-                    while (true) {
-                        try {
-                            let res = await eos.getBlock(STARTUP_BLOCK);
-                            break;
-                        } catch (e) {
-                            Sleep.msleep(STARTUP_REQUESTS_DELAY);
-                            checkTimeout(startTime, timeout);
-                        }
-                    }
-                    break;
-                }
-            } catch (e) {
-                Sleep.msleep(STARTUP_REQUESTS_DELAY);
-                checkTimeout(startTime, timeout);
-            }
-        }
+        this.signature_provider = signature_provider;
     }
 
     async run() {
@@ -74,7 +44,27 @@ class Node {
         }
 
         // use spawn function because nodeos has infinity output
-        this.instance = spawn('nodeos', ['--contracts-console', '--delete-all-blocks', '--access-control-allow-origin=*']);
+        //         nodeos -e -p eosio \
+        // --plugin eosio::producer_plugin \
+        // --plugin eosio::chain_api_plugin \
+        // --plugin eosio::http_plugin \
+        // --plugin eosio::history_plugin \
+        // --plugin eosio::history_api_plugin \
+        // --access-control-allow-origin='*' \
+        // --contracts-console \
+        // --http-validate-host=false \
+        // --verbose-http-errors 
+        this.instance = spawn('nodeos', ['--plugin eosio::producer_plugin',
+         '--plugin eosio::chain_api_plugin',
+         '--plugin eosio::http_plugin',
+         '--plugin eosio::history_plugin',
+         '--plugin eosio::history_api_plugin',
+         '--http-validate-host=false',
+         '--verbose-http-errors',
+         '--contracts-console', 
+         '--delete-all-blocks', 
+         '--filter-on=\'*\'',
+         '--access-control-allow-origin=\'*\'']);
 
         // wait until node is running
         while (this.running === false) {
@@ -107,8 +97,18 @@ class Node {
         if (!this.running) {
             throw new Error('Eos node must running for establishing connection.');
         }
-        await this._waitNodeStartup(STARTUP_TIMEOUT);
-        return Eos(this.eos_test_config);
+        
+        let self = this;
+        this.rpc = new JsonRpc('http://127.0.0.1:8888', { fetch });
+        this.api = new Api({ rpc: self.rpc, signatureProvider: self.signature_provider, textDecoder: new TextDecoder(), textEncoder: new TextEncoder() });
+    }
+
+    getRpc() {
+        return this.rpc;
+    }
+
+    getApi() {
+        return this.api;
     }
 
 }
