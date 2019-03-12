@@ -1,5 +1,5 @@
 {
-    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Tue Mar 12 10:22:04 2019",
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT Mon Mar  4 11:44:10 2019",
     "version": "eosio::abi/1.1",
     "structs": [
         {
@@ -239,6 +239,172 @@
                     "type": "bool"
                 }
             ]
+        },
+        {
+            "name": "endpoint",
+            "base": "",
+            "fields": [
+                {
+                    "name": "id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "provider",
+                    "type": "name"
+                },
+                {
+                    "name": "specifier",
+                    "type": "string"
+                },
+                {
+                    "name": "broker",
+                    "type": "name"
+                },
+                {
+                    "name": "functions",
+                    "type": "uint64[]"
+                }
+            ]
+        },
+        {
+            "name": "provider",
+            "base": "",
+            "fields": [
+                {
+                    "name": "user",
+                    "type": "name"
+                },
+                {
+                    "name": "title",
+                    "type": "string"
+                },
+                {
+                    "name": "key",
+                    "type": "uint64"
+                }
+            ]
+        },
+        {
+            "name": "holder",
+            "base": "",
+            "fields": [
+                {
+                    "name": "provider",
+                    "type": "name"
+                },
+                {
+                    "name": "endpoint",
+                    "type": "string"
+                },
+                {
+                    "name": "dots",
+                    "type": "uint64"
+                },
+                {
+                    "name": "escrow",
+                    "type": "uint64"
+                }
+            ]
+        },
+        {
+            "name": "issued",
+            "base": "",
+            "fields": [
+                {
+                    "name": "endpointid",
+                    "type": "uint64"
+                },
+                {
+                    "name": "dots",
+                    "type": "uint64"
+                }
+            ]
+        },
+        {
+            "name": "qdata",
+            "base": "",
+            "fields": [
+                {
+                    "name": "id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "provider",
+                    "type": "name"
+                },
+                {
+                    "name": "subscriber",
+                    "type": "name"
+                },
+                {
+                    "name": "endpoint",
+                    "type": "string"
+                },
+                {
+                    "name": "data",
+                    "type": "string"
+                },
+                {
+                    "name": "onchain",
+                    "type": "bool"
+                },
+                {
+                    "name": "timestamp",
+                    "type": "uint128"
+                }
+            ]
+        },
+        {
+            "name": "subscription",
+            "base": "",
+            "fields": [
+                {
+                    "name": "id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "price",
+                    "type": "uint64"
+                },
+                {
+                    "name": "start",
+                    "type": "uint64"
+                },
+                {
+                    "name": "end",
+                    "type": "uint64"
+                },
+                {
+                    "name": "subscriber",
+                    "type": "name"
+                },
+                {
+                    "name": "endpoint",
+                    "type": "string"
+                }
+            ]
+        },
+        {
+            "name": "params",
+            "base": "",
+            "fields": [
+                {
+                    "name": "id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "provider",
+                    "type": "name"
+                },
+                {
+                    "name": "endpoint",
+                    "type": "string"
+                },
+                {
+                    "name": "values",
+                    "type": "string[]"
+                }
+            ]
         }
     ],
     "types": [],
@@ -299,7 +465,57 @@
             "ricardian_contract": ""
         }
     ],
-    "tables": [],
+    "tables": [ 
+        {
+            "name": "endpoint",
+            "type": "endpoint",
+            "index_type": "i64",
+            "key_names" : ["primary_key"],
+            "key_types" : ["uint64"]
+        },
+        {
+            "name": "provider",
+            "type": "provider",
+            "index_type": "i64",
+            "key_names" : ["primary_key"],
+            "key_types" : ["uint64"]
+        },
+        {
+            "name": "holder",
+            "type": "holder",
+            "index_type": "i64",
+            "key_names" : ["primary_key"],
+            "key_types" : ["uint64"]
+        },
+        {
+            "name": "issued",
+            "type": "issued",
+            "index_type": "i64",
+            "key_names" : ["primary_key", "get_provider"],
+            "key_types" : ["uint64", "uint64"]
+        },
+        {
+            "name": "qdata",
+            "type": "qdata",
+            "index_type": "i64",
+            "key_names" : ["primary_key", "get_provider", "get_timestamp"],
+            "key_types" : ["uint64", "uint64", "uint128"]
+        },
+        {
+            "name": "subscription",
+            "type": "subscription",
+            "index_type": "i64",
+            "key_names" : ["primary_key"],
+            "key_types" : ["uint64"]
+        },
+        {
+            "name": "params",
+            "type": "params",
+            "index_type": "i64",
+            "key_names" : ["primary_key"],
+            "key_types" : ["uint64"]
+        }
+    ],
     "ricardian_clauses": [],
     "variants": [],
     "abi_extensions": []
