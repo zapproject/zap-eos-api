@@ -75,6 +75,7 @@ class Node {
 
         // use spawn function because nodeos has infinity output
         this.instance = spawn('nodeos', ['--plugin eosio::producer_plugin',
+         '--delete-all-blocks',
          '--plugin eosio::chain_api_plugin',
          '--plugin eosio::http_plugin',
          '--plugin eosio::history_plugin',
