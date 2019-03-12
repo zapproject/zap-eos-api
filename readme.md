@@ -2,7 +2,8 @@ ZAP EOS SMART CONTRACTS
 -
 
 Software versions
- - EOS v1.1.x
+ - EOS v1.5.0
+ - EOS CDT v1.4.1
  - CMake v3.5.0^
  - Nodejs
  - Eosjs
@@ -11,11 +12,8 @@ Software versions
  - Chai
  - Mocha
 
- Commands
- - to test contracts manually run '*node*' and include environment.js '*env = require('./test/environment.js')*'
- - to run tests use '*npm test*'
- - to compile use '*cmake ./*' then '*make all*' or '*make -f makefile.self lcompile*'
- - to generate abi use '*make -f makefile.self generate_abi*'
-
-Issues
-- cmake generated .wasm file doesn't work, use '*lcompile*' command
+How to run:
+- make copy of ./main.abi
+- cmake ./
+- make all
+- replace ./build/main/main.abi by copied main.abi
