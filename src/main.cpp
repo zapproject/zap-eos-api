@@ -1,47 +1,49 @@
 #include "main.hpp"
 
 
-void Main::newprovider(account_name provider, std::string title, uint64_t public_key) {
-    Main::registry.newprovider(provider, title, public_key);
+void main::newprovider(name provider, std::string title, uint64_t public_key) {
+    main::registry.newprovider(provider, title, public_key);
 }
 
-void Main::addendpoint(account_name provider, std::string specifier, std::vector <int64_t> functions, account_name broker) {
-    Main::registry.addendpoint(provider, specifier, functions, broker);
+void main::addendpoint(name provider, std::string specifier, std::vector <int64_t> functions, name broker) {
+    main::registry.addendpoint(provider, specifier, functions, broker);
 }
 
-void Main::bond(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots) {
-    Main::bondage.bond(subscriber, provider, endpoint, dots);
+void main::bond(name subscriber, name provider, std::string endpoint, uint64_t dots) {
+    main::bondage.bond(subscriber, provider, endpoint, dots);
 }
 
-void Main::unbond(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots) {
-    Main::bondage.unbond(subscriber, provider, endpoint, dots);
+void main::unbond(name subscriber, name provider, std::string endpoint, uint64_t dots) {
+    main::bondage.unbond(subscriber, provider, endpoint, dots);
 }
 
-void Main::estimate(account_name provider, std::string endpoint, uint64_t dots) {
-    Main::bondage.estimate(provider, endpoint, dots);
+void main::estimate(name provider, std::string endpoint, uint64_t dots) {
+    main::bondage.estimate(provider, endpoint, dots);
 }
 
-void Main::query(account_name subscriber, account_name provider, std::string endpoint, std::string query,
+void main::query(name subscriber, name provider, std::string endpoint, std::string query,
                  bool onchain_provider, bool onchain_subscriber, uint128_t timestamp) {
-    Main::dispatcher.query(subscriber, provider, endpoint, query, onchain_provider, onchain_subscriber, timestamp);
+    main::dispatcher.query(subscriber, provider, endpoint, query, onchain_provider, onchain_subscriber, timestamp);
 }
 
-void Main::respond(account_name responder, uint64_t id, std::string params, account_name subscriber) {
-    Main::dispatcher.respond(responder, id, params, subscriber);
+void main::respond(name responder, uint64_t id, std::string params, name subscriber) {
+    main::dispatcher.respond(responder, id, params, subscriber);
 }
 
-void Main::subscribe(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots, std::string params) {
-    Main::dispatcher.subscribe(subscriber, provider, endpoint, dots, params);
+void main::subscribe(name subscriber, name provider, std::string endpoint, uint64_t dots, std::string params) {
+    main::dispatcher.subscribe(subscriber, provider, endpoint, dots, params);
 }
 
-void Main::unsubscribe(account_name subscriber, account_name provider, std::string endpoint, bool from_sub) {
-    Main::dispatcher.unsubscribe(subscriber, provider, endpoint, from_sub);
+void main::unsubscribe(name subscriber, name provider, std::string endpoint, bool from_sub) {
+    main::dispatcher.unsubscribe(subscriber, provider, endpoint, from_sub);
 }
 
-void Main::setparams(account_name provider, std::string specifier, std::vector<std::string> params) {
-    Main::registry.setparams(provider, specifier, params);
+void main::setparams(name provider, std::string specifier, std::vector<std::string> params) {
+    main::registry.setparams(provider, specifier, params);
 }
 
-void Main::cancelquery(account_name subscriber, uint64_t query_id) {
-    Main::dispatcher.cancelquery(subscriber, query_id);
+void main::cancelquery(name subscriber, uint64_t query_id) {
+    main::dispatcher.cancelquery(subscriber, query_id);
 }
+
+EOSIO_DISPATCH(main, (newprovider)(addendpoint)(bond)(unbond)(estimate)(query)(respond)(subscribe)(unsubscribe)(setparams)(cancelquery))

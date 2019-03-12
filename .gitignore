@@ -11,3 +11,4 @@
 !test/
 !test/**
 !test/eos/
+!main.abi

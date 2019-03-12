@@ -4,39 +4,39 @@ using namespace eosio;
 
 class Dispatcher {
     public:
- 	Dispatcher(account_name n): _self(n), queries(n, n) { }
+ 	Dispatcher(name n): _self(n), queries(n, n.value) { }
 
         //Query provider data
-        void query(account_name subscriber, account_name provider, std::string endpoint, std::string query, bool onchain_provider, bool onchain_subscriber, uint128_t timestamp);
+        void query(name subscriber, name provider, std::string endpoint, std::string query, bool onchain_provider, bool onchain_subscriber, uint128_t timestamp);
 
         //Respond to query
-        void respond(account_name responder, uint64_t id, std::string params, account_name subscriber);
+        void respond(name responder, uint64_t id, std::string params, name subscriber);
 
         //Buy subscription to provider endpoint
-        void subscribe(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots, std::string params);
+        void subscribe(name subscriber, name provider, std::string endpoint, uint64_t dots, std::string params);
 
         //Remove subscription
-        void unsubscribe(account_name subscriber, account_name provider, std::string endpoint, bool from_sub);
+        void unsubscribe(name subscriber, name provider, std::string endpoint, bool from_sub);
 
         //Cancel query execution
-        void cancelquery(account_name subscriber, uint64_t query_id);
+        void cancelquery(name subscriber, uint64_t query_id);
 
     private:
-        account_name _self;   
+        name _self;   
         db::queryIndex queries;
 
         //TODO: must be changed to prod account
-        const account_name zap_token = N(zap.token);
+        const name zap_token = "zap.token"_n;
 
         //Convert specified amount of tokens to <asset> structure
         eosio::asset to_asset(uint64_t tokensAmount) {
-            return asset(tokensAmount, symbol_type(string_to_symbol(ZAP_TOKEN_DECIMALS, ZAP_TOKEN_SYMBOL)));
+            return asset(tokensAmount, symbol(symbol_code(ZAP_TOKEN_SYMBOL), ZAP_TOKEN_DECIMALS));
         }
     
-        void transfer_tokens(account_name from, account_name to, uint64_t amount, std::string memo) {
+        void transfer_tokens(name from, name to, uint64_t amount, std::string memo) {
             action(
-                permission_level{ from, N(active) },
-                zap_token, N(transfer),
+                permission_level{ from, "active"_n },
+                zap_token, "transfer"_n,
                 std::make_tuple(from, to, to_asset(amount), memo)
             ).send();
         }
@@ -52,10 +52,10 @@ class Dispatcher {
             }
         }
 
-        uint64_t get_bound_dots(account_name subscriber, account_name provider, std::string endpoint) {
-            db::holderIndex holders(_self, subscriber);
+        uint64_t get_bound_dots(name subscriber, name provider, std::string endpoint) {
+            db::holderIndex holders(_self, subscriber.value);
             
-            auto hidx = holders.get_index<N(byhash)>();
+            auto hidx = holders.get_index<"byhash"_n>();
             auto holders_iterator = hidx.find(db::hash(provider, endpoint));
             
             if (holders_iterator != hidx.end()) {
@@ -65,7 +65,7 @@ class Dispatcher {
             }
         }
 
-        uint64_t update_issued(db::issuedIndex &issued, account_name payer, uint64_t endpoint_id, int64_t dots) {
+        uint64_t update_issued(db::issuedIndex &issued, name payer, uint64_t endpoint_id, int64_t dots) {
             auto issued_iterator = issued.find(endpoint_id);
             uint64_t total_issued_dots = 0;
             if (issued_iterator != issued.end()) {
@@ -84,8 +84,8 @@ class Dispatcher {
             return total_issued_dots;
         }
     
-        auto update_holder(db::holderIndex &holders, account_name payer, account_name provider, std::string endpoint, int64_t dots, int64_t escrow) {
-            auto holders_index = holders.get_index<N(byhash)>();
+        auto update_holder(db::holderIndex &holders, name payer, name provider, std::string endpoint, int64_t dots, int64_t escrow) {
+            auto holders_index = holders.get_index<"byhash"_n>();
             auto holders_iterator = holders_index.find(db::hash(provider, endpoint));
             if (holders_iterator != holders_index.end()) {
                 holders_index.modify(holders_iterator, payer, [&](auto& h) {
@@ -101,7 +101,7 @@ class Dispatcher {
                     h.dots = dots;
                     h.escrow = escrow;
                 });
-                print_f("New holder created, provider = %; endpoint = %; dots = %.\n", name{provider}, endpoint, dots);
+                print_f("New holder created, provider = %; endpoint = %; dots = %.\n", name{provider}, endpoint.c_str(), dots);
             }
             return holders_iterator;
         }
@@ -109,10 +109,10 @@ class Dispatcher {
         //Escrow dots to specified endpoint
         //Can be called only by dispatch provider
         //User can not withdraw dots from escrow
-        void escrow(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots) {
-            db::holderIndex holders(_self, subscriber);
+        void escrow(name subscriber, name provider, std::string endpoint, uint64_t dots) {
+            db::holderIndex holders(_self, subscriber.value);
 
-            auto idx = holders.get_index<N(byhash)>();
+            auto idx = holders.get_index<"byhash"_n>();
             auto holders_iterator = idx.find(db::hash(provider, endpoint));
         
             eosio_assert(holders_iterator != idx.end(), "Holder not found.");
@@ -128,17 +128,17 @@ class Dispatcher {
         //Provider will receive zap tokens for escrowed dots
         //Dots will be removed from total issued of endpoint
         //Dots will be removed from subscriber holder
-        void release(account_name payer, account_name subscriber, account_name provider, std::string endpoint, uint64_t dots) {
-            db::holderIndex sub_holders(_self, subscriber);
-            db::holderIndex pro_holders(_self, provider);
-            db::endpointIndex endpoints(_self, provider);
-            db::issuedIndex issued(_self, provider);
+        void release(name payer, name subscriber, name provider, std::string endpoint, uint64_t dots) {
+            db::holderIndex sub_holders(_self, subscriber.value);
+            db::holderIndex pro_holders(_self, provider.value);
+            db::endpointIndex endpoints(_self, provider.value);
+            db::issuedIndex issued(_self, provider.value);
         
-            auto endpoints_index = endpoints.get_index<N(byhash)>();
+            auto endpoints_index = endpoints.get_index<"byhash"_n>();
             auto endpoints_iterator = endpoints_index.find(db::hash(provider, endpoint));
             auto issued_iterator = issued.find(endpoints_iterator->id);
 
-            auto holders_index = sub_holders.get_index<N(byhash)>();
+            auto holders_index = sub_holders.get_index<"byhash"_n>();
             auto holders_iterator = holders_index.find(db::hash(provider, endpoint));
 
             // Check that subscriber have bonded dots and his escrow dots are bigger or equal to dots for release

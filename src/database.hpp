@@ -16,12 +16,12 @@ using namespace eosio;
 
 namespace db {
 
-    static key256 hash(account_name provider, std::string specifier);
-    static std::array<uint128_t, 2> checksum256_to_uint128array(checksum256 c);
+    static fixed_bytes<32> hash(name provider, std::string specifier);
+    static std::array<uint128_t, 2> checksum256_to_uint128array(capi_checksum256 c);
 
     // TODO: must be reviewed
     // Does this hash will be always unique?
-    static key256 hash(account_name provider, std::string specifier) {
+    static fixed_bytes<32> hash(name provider, std::string specifier) {
         // TODO: std::to_string currently not working with eosio.cdt compiler
         // https://github.com/EOSIO/eosio.cdt/issues/95, then use name{}.to_string()
         std::string provider_string = name{provider}.to_string();
@@ -31,17 +31,17 @@ namespace db {
         char *data = new char[result_size];
         strcpy(data, concatenated.c_str());
 
-        checksum256 hash_result;
+        capi_checksum256 hash_result;
         sha256(data, result_size, &hash_result);
 
         delete [] data;
-        return key256(checksum256_to_uint128array(hash_result));
+        return fixed_bytes<32>(checksum256_to_uint128array(hash_result));
     }
 
     // TODO: must be reviewed
     // !!! according this doc https://developers.eos.io/eosio-cpp/docs/random-number-generation checksum element is 4 bytes (uin32_t == int) length
     // !!! but in sources it is 1 byte length (uint8_t == unsigned char)
-    static std::array<uint128_t, 2> checksum256_to_uint128array(checksum256 c) {
+    static std::array<uint128_t, 2> checksum256_to_uint128array(capi_checksum256 c) {
         uint128_t first_word = 0;
         uint128_t second_word = 0;
 
@@ -60,16 +60,16 @@ namespace db {
     //Table for provider endpoints, created in context of specified provider
     struct [[eosio::table]] endpoint {
         uint64_t id;
-        account_name provider;
+        name provider;
         std::string specifier;
-        account_name broker;
+        name broker;
         std::vector<int64_t> functions;
 
         uint64_t primary_key() const { return id; }
 
-        // I haven't found any examples of key256 usage, but, according doc, multi_index supports 256 bytes secondary keys 
+        // I haven't found any examples of fixed_bytes<32> usage, but, according doc, multi_index supports 256 bytes secondary keys 
         // this secondary key allows to find item with specified provider and specifier by using find() method
-        key256 by_hash() const { return db::hash(provider, specifier); }
+        fixed_bytes<32> by_hash() const { return db::hash(provider, specifier); }
 
         EOSLIB_SERIALIZE(endpoint, (id)(provider)(specifier)(broker)(functions))
     };
@@ -77,11 +77,11 @@ namespace db {
     //@abi table provider i64
     //Table for providers, created in context of zap registry contract
     struct [[eosio::table]] provider {
-        account_name user;
+        name user;
         std::string title;
         uint64_t key;
 
-        uint64_t primary_key() const { return user; }
+        uint64_t primary_key() const { return user.value; }
 
         EOSLIB_SERIALIZE(provider, (user)(title)(key))
     };
@@ -90,14 +90,14 @@ namespace db {
     //Table for user holders, created in context of user
     struct [[eosio::table]] holder {
         uint64_t id;
-        account_name provider;
+        name provider;
         std::string endpoint;
         uint64_t dots;
         uint64_t escrow;
 
         uint64_t primary_key() const { return id; }
-        uint64_t get_provider() const { return provider; }
-        key256 get_hash() const { return db::hash(provider, endpoint); }
+        uint64_t get_provider() const { return provider.value; }
+        fixed_bytes<32> get_hash() const { return db::hash(provider, endpoint); }
 
         EOSLIB_SERIALIZE(holder, (id)(provider)(endpoint)(dots)(escrow))
     };
@@ -117,15 +117,15 @@ namespace db {
     //Table to store user queries
     struct [[eosio::table]] qdata {
         uint64_t id;
-        account_name provider;
-        account_name subscriber;
+        name provider;
+        name subscriber;
         std::string endpoint;
         std::string data;
         bool onchain;
         uint128_t timestamp;
 
         uint64_t primary_key() const { return id; }
-        uint64_t get_provider() const { return provider; }
+        uint64_t get_provider() const { return provider.value; }
         uint128_t get_timestamp() const { return timestamp; }
 
         EOSLIB_SERIALIZE(qdata, (id)(provider)(subscriber)(endpoint)(data)(onchain)(timestamp))
@@ -137,11 +137,11 @@ namespace db {
         uint64_t price;
         uint64_t start;
         uint64_t end;
-        account_name subscriber;
+        name subscriber;
         std::string endpoint;
 
         uint64_t primary_key() const { return id; }
-        key256 get_hash() const { return db::hash(subscriber, endpoint); }
+        fixed_bytes<32> get_hash() const { return db::hash(subscriber, endpoint); }
 
         EOSLIB_SERIALIZE(subscription, (id)(price)(start)(end)(subscriber)(endpoint))
     };
@@ -149,12 +149,12 @@ namespace db {
     //@abi table params i64
     struct [[eosio::table]] params {
         uint64_t id;
-        account_name provider;
+        name provider;
         std::string endpoint;
         std::vector<std::string> values;
 
         uint64_t primary_key() const { return id; }
-        key256 by_hash() const { return db::hash(provider, endpoint); }
+        fixed_bytes<32> by_hash() const { return db::hash(provider, endpoint); }
 
         EOSLIB_SERIALIZE(params, (id)(provider)(endpoint)(values))
     };
@@ -163,11 +163,11 @@ namespace db {
     typedef multi_index<"provider"_n, provider> providerIndex;
 
     typedef multi_index<"endpoint"_n, endpoint,
-                indexed_by<"byhash"_n, const_mem_fun<endpoint, key256, &endpoint::by_hash>>
+                indexed_by<"byhash"_n, const_mem_fun<endpoint, fixed_bytes<32>, &endpoint::by_hash>>
             > endpointIndex;
 
     typedef multi_index<"holder"_n, holder,
-                indexed_by<"byhash"_n, const_mem_fun<holder, key256, &holder::get_hash>>,
+                indexed_by<"byhash"_n, const_mem_fun<holder, fixed_bytes<32>, &holder::get_hash>>,
                 indexed_by<"byprovider"_n, const_mem_fun<holder, uint64_t, &holder::get_provider>>
             > holderIndex;
 
@@ -179,11 +179,11 @@ namespace db {
             > queryIndex;
 
     typedef multi_index<"subscription"_n, subscription,
-                indexed_by<"byhash"_n, const_mem_fun<subscription, key256, &subscription::get_hash>>
+                indexed_by<"byhash"_n, const_mem_fun<subscription, fixed_bytes<32>, &subscription::get_hash>>
             > subscriptionIndex;
 
-    typedef multi_index<N(params), params,
-            indexed_by<N(byhash), const_mem_fun<params, key256, &params::by_hash>>
+    typedef multi_index<"params"_n, params,
+            indexed_by<"byhash"_n, const_mem_fun<params, fixed_bytes<32>, &params::by_hash>>
     > paramsIndex;
 }
 

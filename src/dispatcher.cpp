@@ -5,7 +5,7 @@
 #define DOT_SECONDS 60
 #define MIN_SUB_PRICE 1
 
-void Dispatcher::query(account_name subscriber, account_name provider, std::string endpoint, std::string query, bool onchain_provider, bool onchain_subscriber, uint128_t timestamp) {
+void Dispatcher::query(name subscriber, name provider, std::string endpoint, std::string query, bool onchain_provider, bool onchain_subscriber, uint128_t timestamp) {
     require_auth(subscriber);
 
     uint64_t bound = Dispatcher::get_bound_dots(subscriber, provider, endpoint);
@@ -27,12 +27,12 @@ void Dispatcher::query(account_name subscriber, account_name provider, std::stri
             q.timestamp = timestamp;
         });
 
-        print_f("Query called: id = %, sub = %, provider = %, endpoint = %;", availableKey, name{subscriber}, name{provider}, endpoint);
+        print_f("Query called: id = %, sub = %, provider = %, endpoint = %;", availableKey, name{subscriber}, name{provider}, endpoint.c_str());
     }   
 }
 
 // Don't need to use different function for different params, json can be passed
-void Dispatcher::respond(account_name responder, uint64_t id, std::string params, account_name subscriber) {
+void Dispatcher::respond(name responder, uint64_t id, std::string params, name subscriber) {
     require_auth(responder);
 
     auto q = queries.find(id);
@@ -42,8 +42,8 @@ void Dispatcher::respond(account_name responder, uint64_t id, std::string params
 
     if (q->onchain) {
         action(
-            permission_level{ responder, N(active) },
-            q->subscriber, N(callback),
+            permission_level{ responder, "active"_n },
+            q->subscriber, "callback"_n,
             std::make_tuple(params)
         ).send();
     } else {
@@ -60,22 +60,22 @@ void Dispatcher::respond(account_name responder, uint64_t id, std::string params
     }
 }
 
-void Dispatcher::subscribe(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots, std::string params) {
+void Dispatcher::subscribe(name subscriber, name provider, std::string endpoint, uint64_t dots, std::string params) {
     require_auth(subscriber);
 
     eosio_assert(dots > 0, "Dots number must be bigger than zero.");
 
-    db::subscriptionIndex subscriptions(_self, provider);
+    db::subscriptionIndex subscriptions(_self, provider.value);
 
-    auto sub_hash_index = subscriptions.get_index<N(byhash)>();
+    auto sub_hash_index = subscriptions.get_index<"byhash"_n>();
     auto sub_iterator = sub_hash_index.find(db::hash(subscriber, endpoint));
 
     eosio_assert(sub_iterator == sub_hash_index.end(), "Already subscribed.");
 
     Dispatcher::escrow(subscriber, provider, endpoint, dots);
 
-    time start = now();
-    time end = start + (dots * DOT_SECONDS);
+    uint64_t start = now();
+    uint64_t end = start + (dots * DOT_SECONDS);
 
     subscriptions.emplace(subscriber, [&] (auto& s) {
         s.id = subscriptions.available_primary_key();
@@ -87,23 +87,23 @@ void Dispatcher::subscribe(account_name subscriber, account_name provider, std::
     });
 }
 
-void Dispatcher::unsubscribe(account_name subscriber, account_name provider, std::string endpoint, bool from_sub) {
+void Dispatcher::unsubscribe(name subscriber, name provider, std::string endpoint, bool from_sub) {
     if (from_sub) {
         require_auth(subscriber);
     } else {
         require_auth(provider);
     }
 
-    db::subscriptionIndex subscriptions(_self, provider);
+    db::subscriptionIndex subscriptions(_self, provider.value);
 
-    auto sub_hash_index = subscriptions.get_index<N(byhash)>();
+    auto sub_hash_index = subscriptions.get_index<"byhash"_n>();
     auto sub_iterator = sub_hash_index.find(db::hash(subscriber, endpoint));
 
     eosio_assert(sub_iterator != sub_hash_index.end(), "Can not found subscription.");
   
-    time current_time = now();
-    if (current_time < sub_iterator->end) {
-        time passed = current_time - sub_iterator->start;
+    uint64_t current_uint64_t = now();
+    if (current_uint64_t < sub_iterator->end) {
+        uint64_t passed = current_uint64_t - sub_iterator->start;
         uint64_t dots_used = passed / DOT_SECONDS;
         if (dots_used <= 0) {
             dots_used = MIN_SUB_PRICE;
@@ -117,10 +117,10 @@ void Dispatcher::unsubscribe(account_name subscriber, account_name provider, std
     subscriptions.erase(main_iterator);
 }
 
-void Dispatcher::cancelquery(account_name subscriber, uint64_t query_id) {
+void Dispatcher::cancelquery(name subscriber, uint64_t query_id) {
     require_auth(subscriber);
 
-    db::holderIndex holders(_self, subscriber);
+    db::holderIndex holders(_self, subscriber.value);
 
     auto query_iterator = queries.find(query_id);
 

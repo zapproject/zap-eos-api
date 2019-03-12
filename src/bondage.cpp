@@ -1,19 +1,19 @@
 #include "bondage.hpp"
 #include <eosiolib/action.hpp>
 
-void Bondage::bond(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots) {
+void Bondage::bond(name subscriber, name provider, std::string endpoint, uint64_t dots) {
     require_auth(subscriber);
 
-    db::holderIndex holders(_self, subscriber);
-    db::endpointIndex endpoints(_self, provider);
-    db::issuedIndex issued(_self, provider);
+    db::holderIndex holders(_self, subscriber.value);
+    db::endpointIndex endpoints(_self, provider.value);
+    db::issuedIndex issued(_self, provider.value);
 
-    auto endpoint_index = endpoints.get_index<N(byhash)>();
+    auto endpoint_index = endpoints.get_index<"byhash"_n>();
     auto endpoint_iterator = endpoint_index.find(db::hash(provider, endpoint));
     eosio_assert(endpoint_iterator != endpoint_index.end(), "Endpoint not found.");
     print_f("Endpoint item found, id = %.\n", endpoint_iterator->id);
 
-    if (endpoint_iterator->broker != 0) {
+    if (endpoint_iterator->broker.value != 0) {
         eosio_assert(endpoint_iterator->broker == subscriber, "Only broker can bond to this endpoint.");
     }
  
@@ -36,23 +36,23 @@ void Bondage::bond(account_name subscriber, account_name provider, std::string e
     Bondage::update_holder(holders, subscriber, provider, endpoint, dots, 0);
 }
 
-void Bondage::unbond(account_name subscriber, account_name provider, std::string endpoint, uint64_t dots) {
+void Bondage::unbond(name subscriber, name provider, std::string endpoint, uint64_t dots) {
     require_auth(subscriber);
 
-    db::holderIndex holders(_self, subscriber);
-    db::endpointIndex endpoints(_self, provider);
-    db::issuedIndex issued(_self, provider);
+    db::holderIndex holders(_self, subscriber.value);
+    db::endpointIndex endpoints(_self, provider.value);
+    db::issuedIndex issued(_self, provider.value);
 
-    auto holders_index = holders.get_index<N(byhash)>();
+    auto holders_index = holders.get_index<"byhash"_n>();
     auto holders_iterator = holders_index.find(db::hash(provider, endpoint));
     eosio_assert(holders_iterator != holders_index.end(), "Holder doesn't exists.");
     
     // Check that subscriber can unbond dots
-    auto endpoint_index = endpoints.get_index<N(byhash)>();
+    auto endpoint_index = endpoints.get_index<"byhash"_n>();
     auto endpoints_iterator = endpoint_index.find(db::hash(provider, endpoint));
     eosio_assert(endpoints_iterator != endpoint_index.end(), "Endpoint doesn't exists.");
 
-    if (endpoints_iterator->broker != 0) {
+    if (endpoints_iterator->broker.value != 0) {
         eosio_assert(endpoints_iterator->broker == subscriber, "Only broker can unbond from this endpoint.");
     }
 
@@ -76,11 +76,11 @@ void Bondage::unbond(account_name subscriber, account_name provider, std::string
     print_f("Transfer tokens action have sent, price is %.\n", price);
 }
 
-void Bondage::estimate(account_name provider, std::string endpoint, uint64_t dots) {
-    db::endpointIndex endpoints(_self, provider);
-    db::issuedIndex issued(_self, provider);
+void Bondage::estimate(name provider, std::string endpoint, uint64_t dots) {
+    db::endpointIndex endpoints(_self, provider.value);
+    db::issuedIndex issued(_self, provider.value);
 
-    auto endpoint_index = endpoints.get_index<N(byhash)>();
+    auto endpoint_index = endpoints.get_index<"byhash"_n>();
     auto endpoint_iterator = endpoint_index.find(db::hash(provider, endpoint));
 
     auto issued_iterator = issued.find(endpoint_iterator->id);
@@ -90,7 +90,7 @@ void Bondage::estimate(account_name provider, std::string endpoint, uint64_t dot
     }
     
     uint64_t price = Bondage::get_dots_price(endpoints.get(endpoint_iterator->id), total_issued_dots, dots);
-    print_f("Estimated price for provider = '%' and endpoint = '%' is % ZAP.\n", name{provider}, endpoint, price);
+    print_f("Estimated price for provider = '%' and endpoint = '%' is % ZAP.\n", name{provider}, endpoint.c_str(), price);
 }
 
 
