@@ -12,3 +12,5 @@
 !test/**
 !test/eos/
 !main.abi
+!src/eosio.token.cpp
+!src/eosio.token.hpp
