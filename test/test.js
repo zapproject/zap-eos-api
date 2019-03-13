@@ -231,7 +231,8 @@ describe('Main', function () {
                     endpoint: endpoint,
                     query: query,
                     onchain_provider: onchain_p ? 1 : 0,
-                    onchain_subscriber: onchain_s ? 1 : 0
+                    onchain_subscriber: onchain_s ? 1 : 0,
+                    timestamp: Date.now()
                 });
 
         }
