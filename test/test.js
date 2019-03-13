@@ -1,8 +1,9 @@
-const Node = require('./environment.js');
+const TestNode = require('./environment.js');
 const Transaction = require('./eos/transaction.js');
 const expect = require('chai')
     .use(require('chai-as-promised'))
     .expect;
+const spawn = require('child_process').spawn;
 
 
 async function configureEnvironment(func) {
@@ -28,37 +29,34 @@ async function getRowsByPrimaryKey(eos, node, {scope, table_name, table_key}) {
 describe('Main', function () {
 
     describe('EOS Node', function () {
-        let node = new Node();
+        let node = new TestNode(true, false);
 
         beforeEach(function (done) {
             this.timeout(30000);
             node.kill();
             done();
-
-        });
+        })
 
         it('#run()', async () => {
-            this.timeout(20000);
             await node.run();
+            console.log(node.running);
             await expect(node.running).to.be.equal(true);
-        });
+        }).timeout(20000);
 
         it('#restart()', async () => {
-            this.timeout(20000);
             await node.restart();
             await expect(node.running).to.be.equal(true);
-        });
+        }).timeout(20000);
 
         it('#kill()', async () => {
-            this.timeout(20000);
             await node.run();
             node.kill();
             await expect(node.running).to.be.equal(false);
-        });
+        }).timeout(20000);;
     });
 
     describe('Environment', function () {
-        let node = new Node(false, false);
+        let node = new TestNode(true, false);
 
         function findElement(array, field, value) {
             for (let i in array) {
@@ -73,16 +71,18 @@ describe('Main', function () {
         }
 
         beforeEach(function (done) {
-            this.timeout(30000);
+            this.timeout(50000);
             configureEnvironment(async () => {
                 try {
-                    await node.restart();
+                    node.kill();
+                    await node.run();
+                    console.log("restarted")
                 } catch (e) {
                     console.log(e);
                 }
                 done();
             });
-        });
+        })
 
         it('#transaction()', async () => {
             let accounts = node.getAccounts();
@@ -171,7 +171,7 @@ describe('Main', function () {
         })
     });
     describe('Contracts', function () {
-        let node = new Node(false, false);
+        let node = new TestNode(true, false);
 
         function createNewProviderTransaction(title, key) {
             return new Transaction()

@@ -1,6 +1,7 @@
 const Sleep = require('sleep');
 const Eos = require('eosjs');
 const spawn = require('child_process').spawn;
+const tkill = require('tree-kill');
 
 const STARTUP_TIMEOUT = 30000;
 const STARTUP_REQUESTS_DELAY = 100;
@@ -74,18 +75,21 @@ class Node {
         }
 
         // use spawn function because nodeos has infinity output
-        this.instance = spawn('nodeos', ['--plugin eosio::producer_plugin',
-         '--delete-all-blocks',
-         '--plugin eosio::chain_api_plugin',
-         '--plugin eosio::http_plugin',
-         '--plugin eosio::history_plugin',
-         '--plugin eosio::history_api_plugin',
-         '--http-validate-host=false',
-         '--verbose-http-errors',
-         '--contracts-console', 
-         '--delete-all-blocks', 
-         '--filter-on=\'*\'',
-         '--access-control-allow-origin=\'*\'']);
+        this.instance = this.instance = spawn('nodeos', 
+        ['-e -p eosio', '--delete-all-blocks', '--contracts-console', '--plugin eosio::producer_plugin', '--plugin eosio::history_plugin', '--plugin eosio::chain_api_plugin', '--plugin eosio::history_api_plugin', '--plugin eosio::http_plugin'],
+        {shell: true, detached: true});
+         
+        // -e -p eosio --plugin eosio::producer_plugin --plugin eosio::chain_api_plugin --plugin eosio::http_plugin --plugin eosio::history_plugin --plugin eosio::history_api_plugin --access-control-allow-origin='*' --contracts-console --http-validate-host=false --verbose-http-errors --filter-on='*' --delete-all-blocks
+        
+        // this.instance.stdout.on('data', function(data) {
+        //     console.log(data.toString()); 
+        // });
+
+        // this.instance.stderr.on('data', function(data) {
+        //     console.log(data.toString()); 
+        // });
+        
+
 
         // wait until node is running
         while (this.running === false) {
@@ -102,7 +106,7 @@ class Node {
 
     kill() {
         if (this.instance) {
-            this.instance.kill();
+            tkill(this.instance.pid);
             this.instance = null;
             this.running = false;
             if (this.verbose) console.log('Eos node killed.');
