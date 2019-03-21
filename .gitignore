@@ -14,5 +14,5 @@
 !main.abi
 !src/eosio.token.cpp
 !src/eosio.token.hpp
+!abi
 !abi/main.abi
-!./abi/main.abi
