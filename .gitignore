@@ -16,3 +16,5 @@
 !src/eosio.token.hpp
 !abi
 !abi/main.abi
+!eos.dockerfile
+!docker-compose.yml
