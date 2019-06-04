@@ -4,5 +4,3 @@ services:
     build:
       context: .
       dockerfile: eos.dockerfile
-    volumes:
-      - ./:/app
