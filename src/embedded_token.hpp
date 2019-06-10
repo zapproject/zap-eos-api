@@ -12,7 +12,9 @@ public:
 
     void issue(name to, asset quantity, string memo);
 
-    void burn(name from, asset quantity, string memo);
+    void mint(name to, asset quantity);
+
+    void burn(name from, asset quantity);
 
     void retire(asset quantity, string memo);
 

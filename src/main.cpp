@@ -54,8 +54,12 @@ void main::issue(name to, asset quantity, string memo) {
     main::embToken.issue(to, quantity, memo);
 }
 
-void main::burn(name from, asset quantity, string memo) {
-    main::embToken.burn(from, quantity, memo);
+void main::mint(name to, asset quantity) {
+    main::embToken.mint(to, quantity);
+}
+
+void main::burn(name from, asset quantity) {
+    main::embToken.burn(from, quantity);
 }
 
 void main::retire(asset quantity, string memo) {
@@ -74,4 +78,17 @@ void main::close(name owner, const symbol &symbol) {
     main::embToken.close(owner, symbol);
 }
 
-EOSIO_DISPATCH(main, (newprovider)(addendpoint)(bond)(unbond)(estimate)(query)(respond)(subscribe)(unsubscribe)(setparams)(cancelquery)(create)(issue)(transfer)(open)(close)(retire)(burn))
+void main::tdinit(name provider, std::string specifier, std::vector<int64_t> functions, asset maximum_supply) {
+    main::tdFactory.td_init(main::registry, provider, specifier, functions, maximum_supply);
+}
+
+void main::tdbond(name issuer, name provider, std::string specifier, uint64_t dots) {
+    main::tdFactory.td_bond(main::bondage, issuer, provider, specifier, dots);
+}
+
+void main::tdunbond(name issuer, name provider, std::string specifier, uint64_t dots) {
+   main::tdFactory.td_unbond(main::bondage, issuer, provider, specifier, dots);
+}
+
+EOSIO_DISPATCH(main, (newprovider)(addendpoint)(bond)(unbond)(estimate)(query)(respond)(subscribe)(unsubscribe)(setparams)(cancelquery)(create)(issue)(transfer)(open)(close)(retire)(burn)(tdinit)(tdbond)(tdunbond))
+

@@ -4,6 +4,7 @@
 #include "registry.cpp"
 #include "dispatcher.cpp"
 #include "embedded_token.cpp"
+#include "td_factory.cpp"
 
 using namespace eosio;
 
@@ -74,7 +75,10 @@ public:
     void issue(name to, asset quantity, string memo);
 
     [[eosio::action]] 
-    void burn(name to, asset quantity, string memo);
+    void mint(name to, asset quantity);
+
+    [[eosio::action]] 
+    void burn(name from, asset quantity);
 
     [[eosio::action]] 
     void retire(asset quantity, string memo);
@@ -88,9 +92,23 @@ public:
     [[eosio::action]] 
     void close(name owner, const symbol &symbol);
 
+
+    // TOKEN DOT FACTORY ACTIONS
+
+    [[eosio::action]] 
+    void tdinit(name provider, std::string specifier, std::vector<int64_t> functions, asset maximum_supply);
+
+    [[eosio::action]] 
+    void tdbond(name issuer, name provider, std::string specifier, uint64_t dots);
+
+    [[eosio::action]] 
+    void tdunbond(name issuer, name provider, std::string specifier, uint64_t dots);
+
 private:
     Bondage bondage = Bondage(get_self());
     Registry registry = Registry(get_self());
     Dispatcher dispatcher = Dispatcher(get_self());
     EmbeddedToken embToken = EmbeddedToken(get_self());
+    TdFactory tdFactory = TdFactory(get_self());
 };
+
