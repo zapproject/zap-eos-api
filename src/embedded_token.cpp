@@ -1,10 +1,13 @@
-#include "embedded_token.hpp"
+/**
+ *  @file
+ *  @copyright defined in eos/LICENSE.txt
+ */
+
+#include "embededd_token.hpp"
 
 namespace eosio {
 
-гыштп
-
-void EmbeddedToken::create(name issuer, asset maximum_supply) {
+void token::create(name issuer, asset maximum_supply) {
     require_auth(_self);
 
     auto sym = maximum_supply.symbol;
@@ -23,7 +26,7 @@ void EmbeddedToken::create(name issuer, asset maximum_supply) {
     });
 }
 
-void EmbeddedToken::issue(name to, asset quantity, string memo) {
+void token::issue(name to, asset quantity, string memo) {
     auto sym = quantity.symbol;
     eosio_assert(sym.is_valid(), "invalid symbol name");
     eosio_assert(memo.size() <= 256, "memo has more than 256 bytes");
@@ -46,14 +49,13 @@ void EmbeddedToken::issue(name to, asset quantity, string memo) {
 
     add_balance(st.issuer, quantity, st.issuer);
 
-    if (to != st.issuer)
-    {
+    if (to != st.issuer) {
         SEND_INLINE_ACTION(*this, transfer, {{st.issuer, "active"_n}},
                            {st.issuer, to, quantity, memo});
     }
 }
 
-void EmbeddedToken::issue(name to, asset quantity, string memo) {
+void token::burn(name from, asset quantity, string memo) {
     auto sym = quantity.symbol;
     eosio_assert(sym.is_valid(), "invalid symbol name");
     eosio_assert(memo.size() <= 256, "memo has more than 256 bytes");
@@ -71,19 +73,19 @@ void EmbeddedToken::issue(name to, asset quantity, string memo) {
     eosio_assert(quantity.amount <= st.max_supply.amount - st.supply.amount, "quantity exceeds available supply");
 
     statstable.modify(st, same_payer, [&](auto &s) {
-        s.supply += quantity;
+        s.supply -= quantity;
     });
 
-    add_balance(st.issuer, quantity, st.issuer);
+    accounts from_acnts(_self, owner.value);
+    const auto &fromAcc = from_acnts.get(value.symbol.code().raw(), "no balance object found");
+    eosio_assert(from.balance.amount >= value.amount, "overdrawn balance");
 
-    if (to != st.issuer)
-    {
-        SEND_INLINE_ACTION(*this, transfer, {{st.issuer, "active"_n}},
-                           {st.issuer, to, quantity, memo});
-    }
+    from_acnts.modify(fromAcc, fromAcc, [&](auto &a) {
+        a.balance -= value;
+    });
 }
 
-void EmbeddedToken::retire(asset quantity, string memo) {
+void token::retire(asset quantity, string memo) {
     auto sym = quantity.symbol;
     eosio_assert(sym.is_valid(), "invalid symbol name");
     eosio_assert(memo.size() <= 256, "memo has more than 256 bytes");
@@ -106,7 +108,7 @@ void EmbeddedToken::retire(asset quantity, string memo) {
     sub_balance(st.issuer, quantity);
 }
 
-void EmbeddedToken::transfer(name from,
+void token::transfer(name from,
                      name to,
                      asset quantity,
                      string memo) {
@@ -131,7 +133,7 @@ void EmbeddedToken::transfer(name from,
     add_balance(to, quantity, payer);
 }
 
-void EmbeddedToken::sub_balance(name owner, asset value) {
+void token::sub_balance(name owner, asset value) {
     accounts from_acnts(_self, owner.value);
 
     const auto &from = from_acnts.get(value.symbol.code().raw(), "no balance object found");
@@ -142,7 +144,7 @@ void EmbeddedToken::sub_balance(name owner, asset value) {
     });
 }
 
-void EmbeddedToken::add_balance(name owner, asset value, name ram_payer) {
+void token::add_balance(name owner, asset value, name ram_payer) {
     accounts to_acnts(_self, owner.value);
     auto to = to_acnts.find(value.symbol.code().raw());
     if (to == to_acnts.end())
@@ -159,7 +161,7 @@ void EmbeddedToken::add_balance(name owner, asset value, name ram_payer) {
     }
 }
 
-void EmbeddedToken::open(name owner, const symbol &symbol, name ram_payer) {
+void token::open(name owner, const symbol &symbol, name ram_payer) {
     require_auth(ram_payer);
 
     auto sym_code_raw = symbol.code().raw();
@@ -178,7 +180,7 @@ void EmbeddedToken::open(name owner, const symbol &symbol, name ram_payer) {
     }
 }
 
-void EmbeddedToken::close(name owner, const symbol &symbol) {
+void token::close(name owner, const symbol &symbol) {
     require_auth(owner);
     accounts acnts(_self, owner.value);
     auto it = acnts.find(symbol.code().raw());
@@ -188,3 +190,4 @@ void EmbeddedToken::close(name owner, const symbol &symbol) {
 }
 
 } // namespace eosio
+

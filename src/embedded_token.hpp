@@ -10,19 +10,19 @@ class EmbeddedToken
 public:
     EmbeddedToken(name n) : _self(n), {}
 
-                                          [[eosio::action]] void create(name issuer, asset maximum_supply);
+    void create(name issuer, asset maximum_supply);
 
-    [[eosio::action]] void issue(name to, asset quantity, string memo);
+    void issue(name to, asset quantity, string memo);
 
-    [[eosio::action]] void burn(name from, asset quantity, string memo);
+    void burn(name from, asset quantity, string memo);
 
-    [[eosio::action]] void retire(asset quantity, string memo);
+    void retire(asset quantity, string memo);
 
-    [[eosio::action]] void transfer(name from, name to, asset quantity, string memo);
+    void transfer(name from, name to, asset quantity, string memo);
 
-    [[eosio::action]] void open(name owner, const symbol &symbol, name ram_payer);
+    void open(name owner, const symbol &symbol, name ram_payer);
 
-    [[eosio::action]] void close(name owner, const symbol &symbol);
+    void close(name owner, const symbol &symbol);
 
     static asset get_supply(name token_contract_account, symbol_code sym_code)
     {

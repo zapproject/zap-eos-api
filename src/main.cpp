@@ -46,4 +46,34 @@ void main::cancelquery(name subscriber, uint64_t query_id) {
     main::dispatcher.cancelquery(subscriber, query_id);
 }
 
-EOSIO_DISPATCH(main, (newprovider)(addendpoint)(bond)(unbond)(estimate)(query)(respond)(subscribe)(unsubscribe)(setparams)(cancelquery))
+void main::create(name issuer, asset maximum_supply) {
+    main::embToken.create(issuer, maximum_supply);
+}
+
+void main::issue(name to, asset quantity, string memo) {
+    main::embToken.issue(to, quantity, memo);
+}
+
+void main::burn(name from, asset quantity, string memo) {
+    main::embToken.burn(from, quantity, memo);
+}
+
+void main::retire(asset quantity, string memo) {
+    main::embToken.retire(quantity, memo);
+}
+
+void main::transfer(name from, name to, asset quantity, string memo) {
+    main::embToken.transfer(from, to, quantity, memo);
+}
+
+void main::open(name owner, const symbol &symbol, name ram_payer) {
+    main::embToken.open(owner, symbol, ram_payer);
+}
+
+void main::close(name owner, const symbol &symbol) {
+    main::embToken.close(owner, symbol);
+}
+
+EOSIO_DISPATCH(main, (newprovider)(addendpoint)(bond)(unbond)(estimate)(query)(respond)(subscribe)(unsubscribe)(setparams)(cancelquery)
+    (create)(issue)(transfer)(open)(close)(retire)(burn)
+)
