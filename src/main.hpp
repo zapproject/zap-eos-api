@@ -3,6 +3,7 @@
 #include "bondage.cpp"
 #include "registry.cpp"
 #include "dispatcher.cpp"
+#include "embedded_token.hpp"
 
 using namespace eosio;
 
@@ -64,8 +65,32 @@ public:
     [[eosio::action]]
     void cancelquery(name subscriber, uint64_t query_id);
 
+
+    // EMBEDDED TOKEN ACTIONS
+    [[eosio::action]]
+    void create(name issuer, asset maximum_supply);
+
+    [[eosio::action]] 
+    void issue(name to, asset quantity, string memo);
+
+    [[eosio::action]] 
+    void burn(name to, asset quantity, string memo);
+
+    [[eosio::action]] 
+    void retire(asset quantity, string memo);
+
+    [[eosio::action]] 
+    void transfer(name from, name to, asset quantity, string memo);
+
+    [[eosio::action]] 
+    void open(name owner, const symbol &symbol, name ram_payer);
+
+    [[eosio::action]] 
+    void close(name owner, const symbol &symbol);
+
 private:
     Bondage bondage = Bondage(get_self());
     Registry registry = Registry(get_self());
     Dispatcher dispatcher = Dispatcher(get_self());
+    EmbToken embToken = EmbToken(get_self())
 };

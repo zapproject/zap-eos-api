@@ -160,6 +160,25 @@ namespace db {
     };
 
 
+    //Embedded token tables
+    struct [[eosio::table]] account {
+        asset balance;
+
+        uint64_t primary_key() const { return balance.symbol.code().raw(); }
+    };
+
+    struct [[eosio::table]] currency_stats {
+        asset supply;
+        asset max_supply;
+        name issuer;
+
+        uint64_t primary_key() const { return supply.symbol.code().raw(); }
+    };
+
+    typedef multi_index<"accounts"_n, account> accounts;
+    typedef multi_index<"stat"_n, currency_stats> stats;
+
+
     typedef multi_index<"provider"_n, provider> providerIndex;
 
     typedef multi_index<"endpoint"_n, endpoint,
