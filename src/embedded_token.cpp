@@ -3,11 +3,9 @@
  *  @copyright defined in eos/LICENSE.txt
  */
 
-#include "embededd_token.hpp"
+#include "embedded_token.hpp"
 
-namespace eosio {
-
-void token::create(name issuer, asset maximum_supply) {
+void EmbeddedToken::create(name issuer, asset maximum_supply) {
     require_auth(_self);
 
     auto sym = maximum_supply.symbol;
@@ -15,7 +13,7 @@ void token::create(name issuer, asset maximum_supply) {
     eosio_assert(maximum_supply.is_valid(), "invalid supply");
     eosio_assert(maximum_supply.amount > 0, "max-supply must be positive");
 
-    stats statstable(_self, sym.code().raw());
+    db::stats statstable(_self, sym.code().raw());
     auto existing = statstable.find(sym.code().raw());
     eosio_assert(existing == statstable.end(), "token with symbol already exists");
 
@@ -26,12 +24,12 @@ void token::create(name issuer, asset maximum_supply) {
     });
 }
 
-void token::issue(name to, asset quantity, string memo) {
+void EmbeddedToken::issue(name to, asset quantity, string memo) {
     auto sym = quantity.symbol;
     eosio_assert(sym.is_valid(), "invalid symbol name");
     eosio_assert(memo.size() <= 256, "memo has more than 256 bytes");
 
-    stats statstable(_self, sym.code().raw());
+    db::stats statstable(_self, sym.code().raw());
     auto existing = statstable.find(sym.code().raw());
     eosio_assert(existing != statstable.end(), "token with symbol does not exist, create token before issue");
     const auto &st = *existing;
@@ -50,17 +48,22 @@ void token::issue(name to, asset quantity, string memo) {
     add_balance(st.issuer, quantity, st.issuer);
 
     if (to != st.issuer) {
-        SEND_INLINE_ACTION(*this, transfer, {{st.issuer, "active"_n}},
-                           {st.issuer, to, quantity, memo});
+        action(
+            permission_level{ st.issuer, "active"_n },
+            _self, "transfer"_n,
+            std::make_tuple(st.issuer, to, quantity, memo)
+        ).send();
+        /*SEND_INLINE_ACTION(_self, transfer, {{st.issuer, "active"_n}},
+                           {st.issuer, to, quantity, memo});*/
     }
 }
 
-void token::burn(name from, asset quantity, string memo) {
+void EmbeddedToken::burn(name from, asset quantity, string memo) {
     auto sym = quantity.symbol;
     eosio_assert(sym.is_valid(), "invalid symbol name");
     eosio_assert(memo.size() <= 256, "memo has more than 256 bytes");
 
-    stats statstable(_self, sym.code().raw());
+    db::stats statstable(_self, sym.code().raw());
     auto existing = statstable.find(sym.code().raw());
     eosio_assert(existing != statstable.end(), "token with symbol does not exist, create token before issue");
     const auto &st = *existing;
@@ -76,21 +79,21 @@ void token::burn(name from, asset quantity, string memo) {
         s.supply -= quantity;
     });
 
-    accounts from_acnts(_self, owner.value);
-    const auto &fromAcc = from_acnts.get(value.symbol.code().raw(), "no balance object found");
-    eosio_assert(from.balance.amount >= value.amount, "overdrawn balance");
+    db::accounts from_acnts(_self, st.issuer.value);
+    const auto &fromAcc = from_acnts.get(quantity.symbol.code().raw(), "no balance object found");
+    eosio_assert(fromAcc.balance.amount >= quantity.amount, "overdrawn balance");
 
-    from_acnts.modify(fromAcc, fromAcc, [&](auto &a) {
-        a.balance -= value;
+    from_acnts.modify(fromAcc, same_payer, [&](auto &a) {
+        a.balance -= quantity;
     });
 }
 
-void token::retire(asset quantity, string memo) {
+void EmbeddedToken::retire(asset quantity, string memo) {
     auto sym = quantity.symbol;
     eosio_assert(sym.is_valid(), "invalid symbol name");
     eosio_assert(memo.size() <= 256, "memo has more than 256 bytes");
 
-    stats statstable(_self, sym.code().raw());
+    db::stats statstable(_self, sym.code().raw());
     auto existing = statstable.find(sym.code().raw());
     eosio_assert(existing != statstable.end(), "token with symbol does not exist");
     const auto &st = *existing;
@@ -108,7 +111,7 @@ void token::retire(asset quantity, string memo) {
     sub_balance(st.issuer, quantity);
 }
 
-void token::transfer(name from,
+void EmbeddedToken::transfer(name from,
                      name to,
                      asset quantity,
                      string memo) {
@@ -116,7 +119,7 @@ void token::transfer(name from,
     require_auth(from);
     eosio_assert(is_account(to), "to account does not exist");
     auto sym = quantity.symbol.code();
-    stats statstable(_self, sym.raw());
+    db::stats statstable(_self, sym.raw());
     const auto &st = statstable.get(sym.raw());
 
     require_recipient(from);
@@ -133,8 +136,8 @@ void token::transfer(name from,
     add_balance(to, quantity, payer);
 }
 
-void token::sub_balance(name owner, asset value) {
-    accounts from_acnts(_self, owner.value);
+void EmbeddedToken::sub_balance(name owner, asset value) {
+    db::accounts from_acnts(_self, owner.value);
 
     const auto &from = from_acnts.get(value.symbol.code().raw(), "no balance object found");
     eosio_assert(from.balance.amount >= value.amount, "overdrawn balance");
@@ -144,8 +147,8 @@ void token::sub_balance(name owner, asset value) {
     });
 }
 
-void token::add_balance(name owner, asset value, name ram_payer) {
-    accounts to_acnts(_self, owner.value);
+void EmbeddedToken::add_balance(name owner, asset value, name ram_payer) {
+    db::accounts to_acnts(_self, owner.value);
     auto to = to_acnts.find(value.symbol.code().raw());
     if (to == to_acnts.end())
     {
@@ -161,16 +164,16 @@ void token::add_balance(name owner, asset value, name ram_payer) {
     }
 }
 
-void token::open(name owner, const symbol &symbol, name ram_payer) {
+void EmbeddedToken::open(name owner, const symbol &symbol, name ram_payer) {
     require_auth(ram_payer);
 
     auto sym_code_raw = symbol.code().raw();
 
-    stats statstable(_self, sym_code_raw);
+    db::stats statstable(_self, sym_code_raw);
     const auto &st = statstable.get(sym_code_raw, "symbol does not exist");
     eosio_assert(st.supply.symbol == symbol, "symbol precision mismatch");
 
-    accounts acnts(_self, owner.value);
+    db::accounts acnts(_self, owner.value);
     auto it = acnts.find(sym_code_raw);
     if (it == acnts.end())
     {
@@ -180,14 +183,12 @@ void token::open(name owner, const symbol &symbol, name ram_payer) {
     }
 }
 
-void token::close(name owner, const symbol &symbol) {
+void EmbeddedToken::close(name owner, const symbol &symbol) {
     require_auth(owner);
-    accounts acnts(_self, owner.value);
+    db::accounts acnts(_self, owner.value);
     auto it = acnts.find(symbol.code().raw());
     eosio_assert(it != acnts.end(), "Balance row already deleted or never existed. Action won't have any effect.");
     eosio_assert(it->balance.amount == 0, "Cannot close because the balance is not zero.");
     acnts.erase(it);
 }
-
-} // namespace eosio
 

@@ -3,7 +3,7 @@
 #include "bondage.cpp"
 #include "registry.cpp"
 #include "dispatcher.cpp"
-#include "embedded_token.hpp"
+#include "embedded_token.cpp"
 
 using namespace eosio;
 
@@ -92,5 +92,5 @@ private:
     Bondage bondage = Bondage(get_self());
     Registry registry = Registry(get_self());
     Dispatcher dispatcher = Dispatcher(get_self());
-    EmbToken embToken = EmbToken(get_self())
+    EmbeddedToken embToken = EmbeddedToken(get_self());
 };

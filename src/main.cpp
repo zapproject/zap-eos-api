@@ -74,6 +74,4 @@ void main::close(name owner, const symbol &symbol) {
     main::embToken.close(owner, symbol);
 }
 
-EOSIO_DISPATCH(main, (newprovider)(addendpoint)(bond)(unbond)(estimate)(query)(respond)(subscribe)(unsubscribe)(setparams)(cancelquery)
-    (create)(issue)(transfer)(open)(close)(retire)(burn)
-)
+EOSIO_DISPATCH(main, (newprovider)(addendpoint)(bond)(unbond)(estimate)(query)(respond)(subscribe)(unsubscribe)(setparams)(cancelquery)(create)(issue)(transfer)(open)(close)(retire)(burn))

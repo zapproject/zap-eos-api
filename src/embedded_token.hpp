@@ -3,12 +3,10 @@
 using namespace eosio;
 using std::string;
 
-namespace eosio
-{
-class EmbeddedToken
-{
+
+class EmbeddedToken {
 public:
-    EmbeddedToken(name n) : _self(n), {}
+    EmbeddedToken(name n) : _self(n) {}
 
     void create(name issuer, asset maximum_supply);
 
@@ -26,14 +24,14 @@ public:
 
     static asset get_supply(name token_contract_account, symbol_code sym_code)
     {
-        stats statstable(token_contract_account, sym_code.raw());
+        db::stats statstable(token_contract_account, sym_code.raw());
         const auto &st = statstable.get(sym_code.raw());
         return st.supply;
     }
 
     static asset get_balance(name token_contract_account, name owner, symbol_code sym_code)
     {
-        accounts accountstable(token_contract_account, owner.value);
+        db::accounts accountstable(token_contract_account, owner.value);
         const auto &ac = accountstable.get(sym_code.raw());
         return ac.balance;
     }
@@ -47,4 +45,3 @@ private:
     void sub_balance(name owner, asset value);
     void add_balance(name owner, asset value, name ram_payer);
 };
-} // namespace eosio
