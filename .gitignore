@@ -21,3 +21,5 @@
 !docker-compose.yml
 !clear.sh
 !rebuild.sh
+!./clear.sh
+!./rebuild.sh
