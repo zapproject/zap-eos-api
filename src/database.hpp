@@ -1,8 +1,8 @@
 #ifndef DATABASE_HEADER
 #define DATABASE_HEADER
 
-#define ZAP_TOKEN_SYMBOL "TST"
-#define ZAP_TOKEN_DECIMALS 0
+#define ZAP_TOKEN_SYMBOL "EOS"
+#define ZAP_TOKEN_DECIMALS 4
 
 #include <eosiolib/eosio.hpp>
 #include <eosiolib/crypto.h>

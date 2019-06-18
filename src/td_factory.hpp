@@ -20,7 +20,7 @@ private:
     name _self;
 
     //TODO: must be changed to prod account
-    const name zap_token = "zaptokentest"_n;
+    const name zap_token = "eosio.token"_n;
 
     //Convert specified amount of tokens to <asset> structure
     eosio::asset to_asset(uint64_t tokensAmount, symbol symbol) {

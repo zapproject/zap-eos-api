@@ -42,7 +42,7 @@ private:
     name _self;
 
     //TODO: must be changed to prod account
-    const name zap_token = "zaptokentest"_n;
+    const name zap_token = "eosio.token"_n;
 
     void sub_balance(name owner, asset value);
     void add_balance(name owner, asset value, name ram_payer);
