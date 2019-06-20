@@ -3,6 +3,46 @@
     "version": "eosio::abi/1.1",
     "structs": [
         {
+            "name": "endp",
+            "base": "",
+            "fields": [
+                {
+                    "name": "specifier",
+                    "type": "string"
+                },
+                {
+                    "name": "functions",
+                    "type": "int64[]"
+                },
+                {
+                    "name": "maximum_supply",
+                    "type": "asset"
+                }
+            ]
+        },
+        {
+            "name": "c_init",
+            "base": "",
+            "fields": [
+                {
+                    "name": "provider",
+                    "type": "name"
+                },
+                {
+                    "name": "finish",
+                    "type": "uint64"
+                },
+                {
+                    "name": "oracle",
+                    "type": "name"
+                },
+                {
+                    "name": "endpoints",
+                    "type": "endp[]"
+                }
+            ]
+        },
+        {
             "name": "account",
             "base": "",
             "fields": [

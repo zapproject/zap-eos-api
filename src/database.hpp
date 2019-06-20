@@ -66,6 +66,7 @@ namespace db {
         std::vector<int64_t> functions;
 
         uint64_t primary_key() const { return id; }
+        uint64_t get_provider() const { return provider.value; }
 
         // I haven't found any examples of fixed_bytes<32> usage, but, according doc, multi_index supports 256 bytes secondary keys 
         // this secondary key allows to find item with specified provider and specifier by using find() method
@@ -192,6 +193,25 @@ namespace db {
         EOSLIB_SERIALIZE(ftoken, (id)(symbol)(endpoint)(provider))
     };
 
+    //Contest
+    struct [[eosio::table]] contest {
+        uint64_t id;
+        name provider;
+        name oracle;
+        uint64_t finish;
+        uint64_t status;
+        std::string winner;
+        std::vector<std::string> endpoints;
+
+        uint64_t primary_key() const { return id; }
+        uint64_t get_provider() const { return provider.value; }
+
+        EOSLIB_SERIALIZE(contest, (provider)(status)(oracle))
+    };
+
+    typedef multi_index<"contest"_n, contest,
+                indexed_by<"byprovider"_n, const_mem_fun<contest, uint64_t, &contest::get_provider>>
+            > contestIndex;
 
     typedef multi_index<"ftoken"_n, ftoken,
                 indexed_by<"byhash"_n, const_mem_fun<ftoken, fixed_bytes<32>, &ftoken::by_hash>>
@@ -204,6 +224,7 @@ namespace db {
     typedef multi_index<"provider"_n, provider> providerIndex;
 
     typedef multi_index<"endpoint"_n, endpoint,
+                indexed_by<"byprovider"_n, const_mem_fun<holder, uint64_t, &endpoint::get_provider>>,
                 indexed_by<"byhash"_n, const_mem_fun<endpoint, fixed_bytes<32>, &endpoint::by_hash>>
             > endpointIndex;
 
