@@ -209,6 +209,13 @@ namespace db {
         EOSLIB_SERIALIZE(contest, (provider)(status)(oracle))
     };
 
+    // not stored in db
+    struct endp {
+        std::string specifier;
+        std::vector<int64_t> functions;
+        asset maximum_supply;      
+    };
+
     typedef multi_index<"contest"_n, contest,
                 indexed_by<"byprovider"_n, const_mem_fun<contest, uint64_t, &contest::get_provider>>
             > contestIndex;

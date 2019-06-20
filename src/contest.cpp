@@ -5,13 +5,13 @@
 #define STATUS_SETTELED 2
 #define STATUS_CANCELED 3
 
-void Contest::c_init(name provider, uint64_t finish, name oracle, std::vector<endp> endpoints) {
+void Contest::c_init(name provider, uint64_t finish, name oracle, std::vector<db::endp> endpoints) {
     require_auth(provider);
 
     std::vector<std::string> specifiers;
 
     // create endpoints and tokens for them
-    for (endp e: endpoints) {
+    for (db::endp e: endpoints) {
         // create new endpoint
         registry.addendpoint(provider, specifier, functions, provider);
 

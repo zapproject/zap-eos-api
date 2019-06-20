@@ -10,7 +10,7 @@ class Contest {
 public:
     Contest(name n) : _self(n) {}
 
-    void c_init(name provider, uint64_t finish, name oracle, std::vector<endp> endpoints);
+    void c_init(name provider, uint64_t finish, name oracle, std::vector<db::endp> endpoints);
 
     void c_judge(name oracle, std::string winner);
 
@@ -25,12 +25,6 @@ private:
 
     //TODO: must be changed to prod account
     const name zap_token = "eosio.token"_n;
-
-    struct endp {
-        std::string specifier;
-        std::vector<int64_t> functions;
-        asset maximum_supply;      
-    };
 
     //Convert specified amount of tokens to <asset> structure
     eosio::asset to_asset(uint64_t tokensAmount, symbol symbol) {
