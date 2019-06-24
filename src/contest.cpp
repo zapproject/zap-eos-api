@@ -46,6 +46,53 @@ void Contest::c_init(name provider, uint64_t finish, name oracle, std::vector<db
     });
 }
 
+void Contest::c_judge(uint64_t contest_id, name oracle, std::string winner, uint64_t win_value) {
+    require_auth(oracle);
+
+    // find contest
+    db::contestIndex contests(_self, provider.value);
+    auto contests_iterator = contests.find(contest_id);
+    eosio_assert(contests_iterator != contests.end(), "Contest not found!");
+
+    eosio_assert(contests_iterator->status != STATUS_JUDGED, "Contest is finished or canceled!");
+    eosio_assert(contests_iterator->finished <= now_time, "Contest timeout!");
+
+    contests.modify(contests_iterator, oracle, [&](auto &contest) {
+        contest.status = STATUS_SETTELED;
+        contest.winValue = win_value;
+    });
+
+}
+
+void Contest:c_settle(name provider, uint64_t contest_id) {
+    require_auth(oracle);
+
+    // find contest
+    db::contestIndex contests(_self, provider.value);
+    auto contests_iterator = contests.find(contest_id);
+    eosio_assert(contests_iterator != contests.end(), "Contest not found!");
+
+    eosio_assert(contests_iterator->status != STATUS_INNITIALIZED, "Contest is finished or canceled!");
+    eosio_assert(contests_iterator->finished <= now_time, "Contest timeout!");
+
+    db::issuedIndex issued(_self, provider.value);
+    db::endpointIndex endpoints(_self, provider.value);
+    for (std::string s: contests_iterator->endpoints) {
+        auto endpoint_index = endpoints.get_index<"byhash"_n>();
+        auto endpoints_iterator = endpoint_index.find(db::hash(provider, s));
+        eosio_assert(endpoints_iterator != endpoint_index.end(), "Endpoint doesn't exists.");
+
+        auto issued_iterator = issued.find(endpoint_iterator->id);
+        if (issued_iterator->dots > 0) {
+             bondage.unbond(provider, provider, specifier, dots);
+        }
+    }
+
+    contests.modify(contests_iterator, oracle, [&](auto &contest) {
+        contest.status = STATUS_SETTELED;
+    });
+}
+
 void Contest::c_bond(Bondage bondage, name issuer, uint64_t contest_id, std::string specifier, uint64_t dots) {
     require_auth(issuer);
     uint64_t now_time = now();
@@ -100,6 +147,27 @@ void Contest::c_unbond(Bondage bondage, name issuer, uint64_t contest_id, std::s
     // check that user can unbond
     if (contests_iterator->status == STATUS_SETTELED) {
          eosio_assert(contests_iterator->winner != specifier, "Only winner endpoint allows unbond");
+
+         bool is_redeemed = false;
+         for (name n: contests_iterator->reedemed) {
+             if (n.value == issuer.value) {
+                 is_redeemed = true;
+                 break;
+             }
+         }
+         eosio_assert(!is_redeemed, "Already redeemed!");
+
+         action(
+             permission_level{ _self, "active"_n },
+             zap_token, "transfer"_n,
+             std::make_tuple(_self, issuer, to_asset(contests_iterator->winValue), "reward")
+         ).send();         
+
+         std::vector<name> redeemed = contests_iterator->redeemed;
+         redeemed.push_back(issuer);
+         contests.modify(contests_iterator, issuer, [&](auto &contest) {
+             contest.redeemed = redeemed;
+         });
     } else {
         bool can_unbond = contests_iterator->status == STATUS_CANCELED || contests_iterator->finished <= now_time
         eosio_assert(!can_unbond, "Can not unbond before contest finish!");
@@ -112,6 +180,9 @@ void Contest::c_unbond(Bondage bondage, name issuer, uint64_t contest_id, std::s
             }
         }
         eosio_assert(!specifier_exists, "Specifier not found!");
+
+        // send provider zap tokens to bond
+        bondage.unbond(provider, provider, specifier, dots);
     }
    
     // find factory token
@@ -119,9 +190,6 @@ void Contest::c_unbond(Bondage bondage, name issuer, uint64_t contest_id, std::s
     auto ftokens_index = ftokens.get_index<"byhash"_n>();
     auto ftokens_iterator = ftokens_index.find(db::hash(contest_iterator->provider, specifier));
     eosio_assert(ftokens_iterator != ftokens_index.end(), "Factory token not found!");
-
-    // send provider zap tokens to bond
-    bondage.unbond(provider, provider, specifier, dots);
 
     // burn factory token from issuer
     asset tokens_to_burn = to_asset(dots, ftokens_iterator->symbol);
