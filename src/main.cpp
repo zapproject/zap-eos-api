@@ -87,8 +87,28 @@ void main::tdbond(name issuer, name provider, std::string specifier, uint64_t do
 }
 
 void main::tdunbond(name issuer, name provider, std::string specifier, uint64_t dots) {
-   main::tdFactory.td_unbond(main::bondage, issuer, provider, specifier, dots);
+    main::tdFactory.td_unbond(main::bondage, issuer, provider, specifier, dots);
 }
 
-EOSIO_DISPATCH(main, (newprovider)(addendpoint)(bond)(unbond)(estimate)(query)(respond)(subscribe)(unsubscribe)(setparams)(cancelquery)(create)(issue)(transfer)(open)(close)(retire)(burn)(tdinit)(tdbond)(tdunbond))
+void main::cinit(name provider, uint64_t finish, name oracle, std::vector<db::endp> endpoints) {
+    main::contest.c_init(main::registry, provider, finish, oracle, endpoints);
+}
+
+void main::cjudge(uint64_t contest_id, name provider, name oracle, std::string winner, uint64_t win_value) {
+    main::contest.c_judge(contest_id, provider, oracle, winner, win_value);    
+}
+
+void main::csettle(name provider, uint64_t contest_id) {
+    main::contest.c_settle(main::bondage, provider, contest_id);
+}
+
+void main::cbond(name issuer, name provider, uint64_t contest_id, std::string specifier, uint64_t dots) {
+    main::contest.c_bond(main::bondage, issuer, provider, contest_id, specifier, dots);
+}
+
+void main::cunbond(name issuer, name provider, uint64_t contest_id, std::string specifier, uint64_t dots) {
+    main::contest.c_unbond(main::bondage, issuer, provider, contest_id, specifier, dots);
+}
+
+EOSIO_DISPATCH(main, (newprovider)(addendpoint)(bond)(unbond)(estimate)(query)(respond)(subscribe)(unsubscribe)(setparams)(cancelquery)(create)(issue)(transfer)(open)(close)(retire)(burn)(tdinit)(tdbond)(tdunbond)(cinit)(cjudge)(csettle)(cbond)(cunbond))
 

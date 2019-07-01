@@ -10,15 +10,15 @@ class Contest {
 public:
     Contest(name n) : _self(n) {}
 
-    void c_init(name provider, uint64_t finish, name oracle, std::vector<db::endp> endpoints);
+    void c_init(Registry registry, name provider, uint64_t finish, name oracle, std::vector<db::endp> endpoints);
 
-    void c_judge(uint64_t contest_id, name oracle, std::string winner, uint64_t win_value);
+    void c_judge(uint64_t contest_id, name provider, name oracle, std::string winner, uint64_t win_value);
 
-    void c_settle(name provider, uint64_t contest_id);
+    void c_settle(Bondage bondage, name provider, uint64_t contest_id);
 
-    void c_bond(Bondage bondage, name issuer, uint64_t contest_id, std::string specifier, uint64_t dots);
+    void c_bond(Bondage bondage, name issuer, name provider, uint64_t contest_id, std::string specifier, uint64_t dots);
 
-    void c_unbond(Bondage bondage, name issuer, uint64_t contest_id, std::string specifier, uint64_t dots);
+    void c_unbond(Bondage bondage, name issuer, name provider, uint64_t contest_id, std::string specifier, uint64_t dots);
 
 private:
     name _self;

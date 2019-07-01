@@ -5,6 +5,7 @@
 #include "dispatcher.cpp"
 #include "embedded_token.cpp"
 #include "td_factory.cpp"
+#include "contest.cpp"
 
 using namespace eosio;
 
@@ -94,7 +95,6 @@ public:
 
 
     // TOKEN DOT FACTORY ACTIONS
-
     [[eosio::action]] 
     void tdinit(name provider, std::string specifier, std::vector<int64_t> functions, asset maximum_supply);
 
@@ -104,11 +104,29 @@ public:
     [[eosio::action]] 
     void tdunbond(name issuer, name provider, std::string specifier, uint64_t dots);
 
+
+    // CONTEST ACTIONS
+    [[eosio::action]] 
+    void cinit(name provider, uint64_t finish, name oracle, std::vector<db::endp> endpoints);
+
+    [[eosio::action]]
+    void cjudge(uint64_t contest_id, name provider, name oracle, std::string winner, uint64_t win_value);
+
+    [[eosio::action]]
+    void csettle(name provider, uint64_t contest_id);
+
+    [[eosio::action]]
+    void cbond(name issuer, name provider, uint64_t contest_id, std::string specifier, uint64_t dots);
+
+    [[eosio::action]]
+    void cunbond(name issuer, name provider, uint64_t contest_id, std::string specifier, uint64_t dots);
+
 private:
     Bondage bondage = Bondage(get_self());
     Registry registry = Registry(get_self());
     Dispatcher dispatcher = Dispatcher(get_self());
     EmbeddedToken embToken = EmbeddedToken(get_self());
     TdFactory tdFactory = TdFactory(get_self());
+    Contest contest = Contest(get_self());
 };
 
