@@ -233,7 +233,7 @@ namespace db {
     typedef multi_index<"provider"_n, provider> providerIndex;
 
     typedef multi_index<"endpoint"_n, endpoint,
-                indexed_by<"byprovider"_n, const_mem_fun<holder, uint64_t, &endpoint::get_provider>>,
+                indexed_by<"byprovider"_n, const_mem_fun<endpoint, uint64_t, &endpoint::get_provider>>,
                 indexed_by<"byhash"_n, const_mem_fun<endpoint, fixed_bytes<32>, &endpoint::by_hash>>
             > endpointIndex;
 
