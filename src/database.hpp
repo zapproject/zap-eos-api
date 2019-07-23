@@ -208,7 +208,7 @@ namespace db {
         uint64_t primary_key() const { return id; }
         uint64_t get_provider() const { return provider.value; }
 
-        EOSLIB_SERIALIZE(contest, (provider)(status)(oracle)(finish)(status)(winner)(endpoints)(winValue)(redeemed))
+        EOSLIB_SERIALIZE(contest, (id)(provider)(oracle)(finish)(status)(winner)(endpoints)(winValue)(redeemed))
     };
 
     // not stored in db

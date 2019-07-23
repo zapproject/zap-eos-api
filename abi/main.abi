@@ -3,6 +3,48 @@
     "version": "eosio::abi/1.1",
     "structs": [
         {
+            "name": "contest",
+            "base": "",
+            "fields": [
+                {
+                    "name": "id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "provider",
+                    "type": "name"
+                },
+                {
+                    "name": "oracle",
+                    "type": "name"
+                },
+                {
+                    "name": "finish",
+                    "type": "uint64"
+                },
+                {
+                    "name": "status",
+                    "type": "uint64"
+                },
+                {
+                    "name": "winner",
+                    "type": "string"
+                },
+                {
+                    "name": "endpoints",
+                    "type": "string[]"
+                },
+                {
+                    "name": "winValue",
+                    "type": "uint64"
+                },
+                {
+                    "name": "redeemed",
+                    "type": "name[]"
+                },
+            ]
+        },
+        {
             "name": "endp",
             "base": "",
             "fields": [
@@ -21,7 +63,7 @@
             ]
         },
         {
-            "name": "c_init",
+            "name": "cinit",
             "base": "",
             "fields": [
                 {
@@ -39,6 +81,98 @@
                 {
                     "name": "endpoints",
                     "type": "endp[]"
+                }
+            ]
+        },
+        {
+            "name": "cjudge",
+            "base": "",
+            "fields": [
+                {
+                    "name": "contest_id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "provider",
+                    "type": "name"
+                },
+                {
+                    "name": "oracle",
+                    "type": "name"
+                },
+                {
+                    "name": "winner",
+                    "type": "string"
+                },
+                {
+                    "name": "win_value",
+                    "type": "uint64"
+                }
+            ]
+        },
+        {
+            "name": "csettle",
+            "base": "",
+            "fields": [
+                {
+                    "name": "provider",
+                    "type": "name"
+                },
+                {
+                    "name": "contest_id",
+                    "type": "uint64"
+                }
+            ]
+        },
+         {
+            "name": "cbond",
+            "base": "",
+            "fields": [
+                {
+                    "name": "issuer",
+                    "type": "name"
+                },
+                {
+                    "name": "provider",
+                    "type": "name"
+                },
+                {
+                    "name": "contest_id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "specifier",
+                    "type": "string"
+                },
+                {
+                    "name": "dots",
+                    "type": "uint64"
+                }
+            ]
+        },
+        {
+            "name": "cunbond",
+            "base": "",
+            "fields": [
+                {
+                    "name": "issuer",
+                    "type": "name"
+                },
+                {
+                    "name": "provider",
+                    "type": "name"
+                },
+                {
+                    "name": "contest_id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "specifier",
+                    "type": "string"
+                },
+                {
+                    "name": "dots",
+                    "type": "uint64"
                 }
             ]
         },
@@ -698,6 +832,46 @@
     "types": [],
     "actions": [
         {
+            "name": "tdbond",
+            "type": "tdbond",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "tdinit",
+            "type": "tdinit",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "tdunbond",
+            "type": "tdunbond",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "csettle",
+            "type": "csettle",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "cunbond",
+            "type": "cunbond",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "cbond",
+            "type": "cbond",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "cinit",
+            "type": "cinit",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "cjudge",
+            "type": "cjudge",
+            "ricardian_contract": ""
+        },
+        {
             "name": "addendpoint",
             "type": "addendpoint",
             "ricardian_contract": ""
@@ -844,7 +1018,7 @@
             "key_types" : ["uint64"]
         },
         {
-            "name": "accounts",
+            "name": "account",
             "type": "account",
             "index_type": "i64",
             "key_names": [],
@@ -863,6 +1037,13 @@
             "index_type": "i64",
             "key_names": ["primary_key"],
             "key_types": ["uint64"]
+        },
+         {
+            "name": "contest",
+            "type": "contest",
+            "index_type": "i64",
+            "key_names": ["primary_key", "get_provider"],
+            "key_types": ["uint64", "uint64"]
         }
     ],
     "ricardian_clauses": [],
