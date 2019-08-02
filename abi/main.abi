@@ -749,16 +749,26 @@
                     "type": "uint64"
                 },
                 {
-                    "name": "provider",
-                    "type": "name"
+                    "name": "supply",
+                    "type": "asset"
                 },
                 {
                     "name": "endpoint",
                     "type": "string"
                 },
                 {
-                    "name": "symbol",
-                    "type": "symbol"
+                    "name": "provider",
+                    "type": "name"
+                }              
+            ]
+        },
+        {
+            "name": "fprovider",
+            "base": "",
+            "fields": [
+                {
+                    "name": "provider",
+                    "type": "name"
                 }
             ]
         },
@@ -1018,18 +1028,18 @@
             "key_types" : ["uint64"]
         },
         {
-            "name": "account",
+            "name": "accounts",
             "type": "account",
             "index_type": "i64",
-            "key_names": [],
-            "key_types": []
+            "key_names": ["currency"],
+            "key_types": ["uint64"]
         },
         {
             "name": "stat",
             "type": "currency_stats",
             "index_type": "i64",
-            "key_names": [],
-            "key_types": []
+            "key_names": ["currency"],
+            "key_types": ["uint64"]
         },
         {
             "name": "ftoken",
@@ -1038,7 +1048,14 @@
             "key_names": ["primary_key"],
             "key_types": ["uint64"]
         },
-         {
+        {
+            "name": "fprovider",
+            "type": "fprovider",
+            "index_type": "i64",
+            "key_names": ["primary_key"],
+            "key_types": ["uint64"]
+        },
+        {
             "name": "contest",
             "type": "contest",
             "index_type": "i64",

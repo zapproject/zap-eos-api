@@ -79,19 +79,19 @@ void main::close(name owner, const symbol &symbol) {
 }
 
 void main::tdinit(name provider, std::string specifier, std::vector<int64_t> functions, asset maximum_supply) {
-    main::tdFactory.td_init(main::registry, provider, specifier, functions, maximum_supply);
+    main::tdFactory.td_init(main::embToken, main::registry, provider, specifier, functions, maximum_supply);
 }
 
 void main::tdbond(name issuer, name provider, std::string specifier, uint64_t dots) {
-    main::tdFactory.td_bond(main::bondage, issuer, provider, specifier, dots);
+    main::tdFactory.td_bond(main::embToken, main::bondage, issuer, provider, specifier, dots);
 }
 
 void main::tdunbond(name issuer, name provider, std::string specifier, uint64_t dots) {
-    main::tdFactory.td_unbond(main::bondage, issuer, provider, specifier, dots);
+    main::tdFactory.td_unbond(main::embToken, main::bondage, issuer, provider, specifier, dots);
 }
 
 void main::cinit(name provider, uint64_t finish, name oracle, std::vector<db::endp> endpoints) {
-    main::contest.c_init(main::registry, provider, finish, oracle, endpoints);
+    main::contest.c_init(main::embToken, main::registry, provider, finish, oracle, endpoints);
 }
 
 void main::cjudge(uint64_t contest_id, name provider, name oracle, std::string winner, uint64_t win_value) {
@@ -103,11 +103,11 @@ void main::csettle(name provider, uint64_t contest_id) {
 }
 
 void main::cbond(name issuer, name provider, uint64_t contest_id, std::string specifier, uint64_t dots) {
-    main::contest.c_bond(main::bondage, issuer, provider, contest_id, specifier, dots);
+    main::contest.c_bond(main::embToken, main::bondage, issuer, provider, contest_id, specifier, dots);
 }
 
 void main::cunbond(name issuer, name provider, uint64_t contest_id, std::string specifier, uint64_t dots) {
-    main::contest.c_unbond(main::bondage, issuer, provider, contest_id, specifier, dots);
+    main::contest.c_unbond(main::embToken, main::bondage, issuer, provider, contest_id, specifier, dots);
 }
 
 EOSIO_DISPATCH(main, (newprovider)(addendpoint)(bond)(unbond)(estimate)(query)(respond)(subscribe)(unsubscribe)(setparams)(cancelquery)(create)(issue)(transfer)(open)(close)(retire)(burn)(tdinit)(tdbond)(tdunbond)(cinit)(cjudge)(csettle)(cbond)(cunbond))

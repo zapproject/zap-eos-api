@@ -5,7 +5,7 @@
 #define STATUS_SETTELED 2
 #define STATUS_CANCELED 3
 
-void Contest::c_init(Registry registry, name provider, uint64_t finish, name oracle, std::vector<db::endp> endpoints) {
+void Contest::c_init(EmbeddedToken embededd_token, Registry registry, name provider, uint64_t finish, name oracle, std::vector<db::endp> endpoints) {
     require_auth(provider);
 
     std::vector<std::string> specifiers;
@@ -16,11 +16,7 @@ void Contest::c_init(Registry registry, name provider, uint64_t finish, name ora
         registry.addendpoint(provider, e.specifier, e.functions, provider);
 
         // create token for this endpoint
-        action(
-            permission_level{ _self, "active"_n },
-            _self, "create"_n,
-            std::make_tuple(_self, e.maximum_supply)
-        ).send();
+        embededd_token.internal_create(_self, e.maximum_supply);
 
         // store token symbol for specified curve
         db::ftokenIndex ftokens(_self, provider.value);
@@ -28,7 +24,7 @@ void Contest::c_init(Registry registry, name provider, uint64_t finish, name ora
             newFtoken.id = ftokens.available_primary_key();
 	    newFtoken.provider = provider;
 	    newFtoken.endpoint = e.specifier;
-	    newFtoken.symbol = e.maximum_supply.symbol;
+	    newFtoken.supply.symbol = e.maximum_supply.symbol;
         });
 
         specifiers.push_back(e.specifier);
@@ -95,7 +91,7 @@ void Contest::c_settle(Bondage bondage, name provider, uint64_t contest_id) {
     });
 }
 
-void Contest::c_bond(Bondage bondage, name issuer, name provider, uint64_t contest_id, std::string specifier, uint64_t dots) {
+void Contest::c_bond(EmbeddedToken embededd_token, Bondage bondage, name issuer, name provider, uint64_t contest_id, std::string specifier, uint64_t dots) {
     require_auth(issuer);
     uint64_t now_time = now();
 
@@ -126,18 +122,14 @@ void Contest::c_bond(Bondage bondage, name issuer, name provider, uint64_t conte
 
    
     // send provider zap tokens to bond
-    bondage.bond(provider, provider, specifier, dots);
+    bondage.noauth_bond(provider, provider, specifier, dots, issuer);
 
     // mint factory token to issuer
-    asset tokens_to_mint = to_asset(dots, ftokens_iterator->symbol);
-    action(
-        permission_level{ _self, "active"_n },
-        _self, "mint"_n,
-        std::make_tuple(issuer, tokens_to_mint)
-    ).send();
+    asset tokens_to_mint = to_asset(dots, ftokens_iterator->supply.symbol);
+    embededd_token.internal_mint(issuer, tokens_to_mint);
 }
 
-void Contest::c_unbond(Bondage bondage, name issuer, name provider, uint64_t contest_id, std::string specifier, uint64_t dots) {
+void Contest::c_unbond(EmbeddedToken embededd_token, Bondage bondage, name issuer, name provider, uint64_t contest_id, std::string specifier, uint64_t dots) {
     require_auth(issuer);
     uint64_t now_time = now();
 
@@ -184,7 +176,7 @@ void Contest::c_unbond(Bondage bondage, name issuer, name provider, uint64_t con
         eosio_assert(!specifier_exists, "Specifier not found!");
 
         // send provider zap tokens to bond
-        bondage.unbond(provider, provider, specifier, dots);
+        bondage.noauth_unbond(provider, provider, specifier, dots, issuer);
     }
    
     // find factory token
@@ -194,10 +186,6 @@ void Contest::c_unbond(Bondage bondage, name issuer, name provider, uint64_t con
     eosio_assert(ftokens_iterator != ftokens_index.end(), "Factory token not found!");
 
     // burn factory token from issuer
-    asset tokens_to_burn = to_asset(dots, ftokens_iterator->symbol);
-    action(
-        permission_level{ _self, "active"_n },
-        _self, "burn"_n,
-        std::make_tuple(issuer, tokens_to_burn)
-    ).send();
+    asset tokens_to_burn = to_asset(dots, ftokens_iterator->supply.symbol);
+    embededd_token.internal_burn(issuer, tokens_to_burn);
 }

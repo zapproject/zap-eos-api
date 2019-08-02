@@ -24,6 +24,16 @@ public:
 
     void close(name owner, const symbol &symbol);
 
+    void internal_create(name issuer, asset maximum_supply);
+
+    void internal_issue(name to, asset quantity, string memo);
+
+    void internal_mint(name to, asset quantity);
+
+    void internal_burn(name from, asset quantity);
+
+    void internal_transfer(name from, name to, asset quantity, string memo);
+
     static asset get_supply(name token_contract_account, symbol_code sym_code)
     {
         db::stats statstable(token_contract_account, sym_code.raw());

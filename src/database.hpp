@@ -179,18 +179,27 @@ namespace db {
 
         EOSLIB_SERIALIZE(currency_stats, (supply)(max_supply)(issuer))
     };
+
+    //All token dot factory providers
+    struct [[eosio::table]] fprovider {
+        name provider;
+
+        uint64_t primary_key() const { return provider.value; }
+
+        EOSLIB_SERIALIZE(fprovider, (provider))
+    };
  
     //Token dot factory tables
     struct [[eosio::table]] ftoken {
         uint64_t id;
-        symbol symbol;
+        asset supply;
         std::string endpoint;
         name provider;
 
         uint64_t primary_key() const { return id; }
         fixed_bytes<32> by_hash() const { return db::hash(provider, endpoint); }
 
-        EOSLIB_SERIALIZE(ftoken, (id)(symbol)(endpoint)(provider))
+        EOSLIB_SERIALIZE(ftoken, (id)(supply)(endpoint)(provider))
     };
 
     //Contest
@@ -225,6 +234,8 @@ namespace db {
     typedef multi_index<"ftoken"_n, ftoken,
                 indexed_by<"byhash"_n, const_mem_fun<ftoken, fixed_bytes<32>, &ftoken::by_hash>>
             > ftokenIndex;
+
+    typedef multi_index<"fprovider"_n, fprovider> fproviderIndex;
 
     typedef multi_index<"accounts"_n, account> accounts;
     typedef multi_index<"stat"_n, currency_stats> stats;

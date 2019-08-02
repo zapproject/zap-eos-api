@@ -15,8 +15,12 @@ public:
     //Buy dots for specified endpoint
     void bond(name subscriber, name provider, std::string endpoint, uint64_t dots);
 
+    void noauth_bond(name subscriber, name provider, std::string endpoint, uint64_t dots, name dotsPayer);
+
     //Withdraw dots for specified provider
     void unbond(name subscriber, name provider, std::string endpoint, uint64_t dots);
+
+    void noauth_unbond(name subscriber, name provider, std::string endpoint, uint64_t dots, name dotsPayer);
 
     //Estimate price of dots (in integral zap tokens) for specified provider
     void estimate(name provider, std::string endpoint, uint64_t dots);
@@ -141,6 +145,7 @@ private:
         }
         return holders_iterator;
     }
+
 };
 
 //EOSIO_ABI(Bondage, (bond)(unbond)(estimate)(escrow)(release)(viewhe)(viewh)(viewi))

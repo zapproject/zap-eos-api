@@ -24,6 +24,23 @@ void EmbeddedToken::create(name issuer, asset maximum_supply) {
     });
 }
 
+void EmbeddedToken::internal_create(name issuer, asset maximum_supply) {
+    auto sym = maximum_supply.symbol;
+    eosio_assert(sym.is_valid(), "invalid symbol name");
+    eosio_assert(maximum_supply.is_valid(), "invalid supply");
+    eosio_assert(maximum_supply.amount > 0, "max-supply must be positive");
+
+    db::stats statstable(_self, sym.code().raw());
+    auto existing = statstable.find(sym.code().raw());
+    eosio_assert(existing == statstable.end(), "token with symbol already exists");
+
+    statstable.emplace(_self, [&](auto &s) {
+        s.supply.symbol = maximum_supply.symbol;
+        s.max_supply = maximum_supply;
+        s.issuer = issuer;
+    });
+}
+
 void EmbeddedToken::issue(name to, asset quantity, string memo) {
     auto sym = quantity.symbol;
     eosio_assert(sym.is_valid(), "invalid symbol name");
@@ -35,6 +52,39 @@ void EmbeddedToken::issue(name to, asset quantity, string memo) {
     const auto &st = *existing;
 
     require_auth(st.issuer);
+    eosio_assert(quantity.is_valid(), "invalid quantity");
+    eosio_assert(quantity.amount > 0, "must issue positive quantity");
+
+    eosio_assert(quantity.symbol == st.supply.symbol, "symbol precision mismatch");
+    eosio_assert(quantity.amount <= st.max_supply.amount - st.supply.amount, "quantity exceeds available supply");
+
+    statstable.modify(st, same_payer, [&](auto &s) {
+        s.supply += quantity;
+    });
+
+    add_balance(st.issuer, quantity, st.issuer);
+
+    if (to != st.issuer) {
+        action(
+            permission_level{ st.issuer, "active"_n },
+            _self, "transfer"_n,
+            std::make_tuple(st.issuer, to, quantity, memo)
+        ).send();
+        /*SEND_INLINE_ACTION(_self, transfer, {{st.issuer, "active"_n}},
+                           {st.issuer, to, quantity, memo});*/
+    }
+}
+
+void EmbeddedToken::internal_issue(name to, asset quantity, string memo) {
+    auto sym = quantity.symbol;
+    eosio_assert(sym.is_valid(), "invalid symbol name");
+    eosio_assert(memo.size() <= 256, "memo has more than 256 bytes");
+
+    db::stats statstable(_self, sym.code().raw());
+    auto existing = statstable.find(sym.code().raw());
+    eosio_assert(existing != statstable.end(), "token with symbol does not exist, create token before issue");
+    const auto &st = *existing;
+
     eosio_assert(quantity.is_valid(), "invalid quantity");
     eosio_assert(quantity.amount > 0, "must issue positive quantity");
 
@@ -78,12 +128,29 @@ void EmbeddedToken::mint(name to, asset quantity) {
         s.supply += quantity;
     });
 
-    db::accounts from_acnts(_self, st.issuer.value);
-    const auto &fromAcc = from_acnts.get(quantity.symbol.code().raw(), "no balance object found");
+    add_balance(to, quantity, same_payer);
+}
 
-    from_acnts.modify(fromAcc, same_payer, [&](auto &a) {
-        a.balance += quantity;
+void EmbeddedToken::internal_mint(name to, asset quantity) {
+    auto sym = quantity.symbol;
+    eosio_assert(sym.is_valid(), "invalid symbol name");
+
+    db::stats statstable(_self, sym.code().raw());
+    auto existing = statstable.find(sym.code().raw());
+    eosio_assert(existing != statstable.end(), "token with symbol does not exist, create token before issue");
+    const auto &st = *existing;
+
+    eosio_assert(quantity.is_valid(), "invalid quantity");
+    eosio_assert(quantity.amount > 0, "must issue positive quantity");
+
+    eosio_assert(quantity.symbol == st.supply.symbol, "symbol precision mismatch");
+    eosio_assert(quantity.amount <= st.max_supply.amount - st.supply.amount, "quantity exceeds available supply");
+
+    statstable.modify(st, to, [&](auto &s) {
+        s.supply += quantity;
     });
+
+    add_balance(to, quantity, to);
 }
 
 void EmbeddedToken::burn(name from, asset quantity) {
@@ -106,13 +173,29 @@ void EmbeddedToken::burn(name from, asset quantity) {
         s.supply -= quantity;
     });
 
-    db::accounts from_acnts(_self, st.issuer.value);
-    const auto &fromAcc = from_acnts.get(quantity.symbol.code().raw(), "no balance object found");
-    eosio_assert(fromAcc.balance.amount >= quantity.amount, "overdrawn balance");
+    sub_balance(from, quantity);
+}
 
-    from_acnts.modify(fromAcc, same_payer, [&](auto &a) {
-        a.balance -= quantity;
+void EmbeddedToken::internal_burn(name from, asset quantity) {
+    auto sym = quantity.symbol;
+    eosio_assert(sym.is_valid(), "invalid symbol name");
+
+    db::stats statstable(_self, sym.code().raw());
+    auto existing = statstable.find(sym.code().raw());
+    eosio_assert(existing != statstable.end(), "token with symbol does not exist, create token before issue");
+    const auto &st = *existing;
+
+    eosio_assert(quantity.is_valid(), "invalid quantity");
+    eosio_assert(quantity.amount > 0, "must issue positive quantity");
+
+    eosio_assert(quantity.symbol == st.supply.symbol, "symbol precision mismatch");
+    eosio_assert(quantity.amount <= st.max_supply.amount - st.supply.amount, "quantity exceeds available supply");
+
+    statstable.modify(st, from, [&](auto &s) {
+        s.supply -= quantity;
     });
+
+    sub_balance(from, quantity);
 }
 
 void EmbeddedToken::retire(asset quantity, string memo) {
@@ -144,6 +227,30 @@ void EmbeddedToken::transfer(name from,
                      string memo) {
     eosio_assert(from != to, "cannot transfer to self");
     require_auth(from);
+    eosio_assert(is_account(to), "to account does not exist");
+    auto sym = quantity.symbol.code();
+    db::stats statstable(_self, sym.raw());
+    const auto &st = statstable.get(sym.raw());
+
+    require_recipient(from);
+    require_recipient(to);
+
+    eosio_assert(quantity.is_valid(), "invalid quantity");
+    eosio_assert(quantity.amount > 0, "must transfer positive quantity");
+    eosio_assert(quantity.symbol == st.supply.symbol, "symbol precision mismatch");
+    eosio_assert(memo.size() <= 256, "memo has more than 256 bytes");
+
+    auto payer = has_auth(to) ? to : from;
+
+    sub_balance(from, quantity);
+    add_balance(to, quantity, payer);
+}
+
+void EmbeddedToken::internal_transfer(name from,
+                     name to,
+                     asset quantity,
+                     string memo) {
+    eosio_assert(from != to, "cannot transfer to self");
     eosio_assert(is_account(to), "to account does not exist");
     auto sym = quantity.symbol.code();
     db::stats statstable(_self, sym.raw());
