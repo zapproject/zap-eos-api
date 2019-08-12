@@ -39,7 +39,7 @@ class TestNode extends Node {
 
         this.account_user = new Account({account_name: 'user'}).fromPrivateKey({private_key: ACC_TEST_PRIV_KEY});
         this.account_provider = new Account({account_name: 'provider'}).fromPrivateKey({private_key: ACC_TEST_PRIV_KEY});
-        this.account_token = new Account({account_name: 'zap.token'}).fromPrivateKey({private_key: ACC_OWNER_PRIV_KEY});
+        this.account_token = new Account({account_name: 'eosio.token'}).fromPrivateKey({private_key: ACC_OWNER_PRIV_KEY});
         this.account_main = new Account({account_name: 'zap.main'}).fromPrivateKey({private_key: ACC_OWNER_PRIV_KEY});
     }
 
@@ -88,7 +88,7 @@ class TestNode extends Node {
             .sender(this.account_token)
             .receiver(this.account_token)
             .action('create')
-            .data({issuer: this.account_token.name, maximum_supply: '1000000000 TST'});
+            .data({issuer: this.account_token.name, maximum_supply: '1000000000.0000 EOS'});
 
         results.push(
             await new Deployer({eos: eos, contract_name: 'eosio.token'})
@@ -143,7 +143,7 @@ class TestNode extends Node {
             .sender(this.account_token)
             .receiver(this.account_token)
             .action('issue')
-            .data({to: this.account_user.name, quantity: '1000000 TST', memo: ''})
+            .data({to: this.account_user.name, quantity: '1000000.0000 EOS', memo: ''})
             .execute(eos);
     }
 

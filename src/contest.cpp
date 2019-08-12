@@ -22,9 +22,9 @@ void Contest::c_init(EmbeddedToken embededd_token, Registry registry, name provi
         db::ftokenIndex ftokens(_self, provider.value);
         ftokens.emplace(provider, [&](auto& newFtoken) {
             newFtoken.id = ftokens.available_primary_key();
-	    newFtoken.provider = provider;
-	    newFtoken.endpoint = e.specifier;
-	    newFtoken.supply.symbol = e.maximum_supply.symbol;
+	        newFtoken.provider = provider;
+	        newFtoken.endpoint = e.specifier;
+	        newFtoken.supply.symbol = e.maximum_supply.symbol;
         });
 
         specifiers.push_back(e.specifier);
@@ -33,12 +33,12 @@ void Contest::c_init(EmbeddedToken embededd_token, Registry registry, name provi
     db::contestIndex contests(_self, provider.value);
     contests.emplace(provider, [&](auto& newContest) {
             newContest.id = contests.available_primary_key();
-	    newContest.provider = provider;
-	    newContest.oracle = oracle;
-	    newContest.finish = finish;
-	    newContest.status = 0;
-	    newContest.winner = "";
-	    newContest.endpoints = specifiers;
+	        newContest.provider = provider;
+	        newContest.oracle = oracle;
+	        newContest.finish = finish;
+	        newContest.status = STATUS_INNITIALIZED;
+	        newContest.winner = "";
+	        newContest.endpoints = specifiers;
     });
 }
 
@@ -70,7 +70,7 @@ void Contest::c_settle(Bondage bondage, name provider, uint64_t contest_id) {
     auto contests_iterator = contests.find(contest_id);
     eosio_assert(contests_iterator != contests.end(), "Contest not found!");
 
-    eosio_assert(contests_iterator->status != STATUS_INNITIALIZED, "Contest is finished or canceled!");
+    eosio_assert(contests_iterator->status == STATUS_INNITIALIZED, "Contest is finished or canceled!");
     eosio_assert(contests_iterator->finish <= now_time, "Contest timeout!");
 
     db::issuedIndex issued(_self, provider.value);
@@ -81,8 +81,8 @@ void Contest::c_settle(Bondage bondage, name provider, uint64_t contest_id) {
         eosio_assert(endpoints_iterator != endpoint_index.end(), "Endpoint doesn't exists.");
 
         auto issued_iterator = issued.find(endpoints_iterator->id);
-        if (issued_iterator->dots > 0) {
-             bondage.unbond(provider, provider, endpoints_iterator->specifier, issued_iterator->dots);
+        if (issued_iterator != issued.end() && issued_iterator->dots > 0) {
+             bondage.noauth_bond(provider, provider, endpoints_iterator->specifier, issued_iterator->dots, provider);
         }
     }
 
@@ -101,7 +101,7 @@ void Contest::c_bond(EmbeddedToken embededd_token, Bondage bondage, name issuer,
     eosio_assert(contests_iterator != contests.end(), "Contest not found!");
 
     // check that user can bond
-    eosio_assert(contests_iterator->status != STATUS_INNITIALIZED, "Contest is finished or canceled!");
+    eosio_assert(contests_iterator->status == STATUS_SETTELED, "Contest is finished or canceled!");
     eosio_assert(contests_iterator->finish <= now_time, "Contest timeout!");
 
     bool specifier_exists = false;
@@ -111,7 +111,7 @@ void Contest::c_bond(EmbeddedToken embededd_token, Bondage bondage, name issuer,
             break;
         }
     }
-    eosio_assert(!specifier_exists, "Specifier not found!");
+    eosio_assert(specifier_exists, "Specifier not found!");
 
 
     // find factory token
@@ -139,7 +139,7 @@ void Contest::c_unbond(EmbeddedToken embededd_token, Bondage bondage, name issue
     eosio_assert(contests_iterator != contests.end(), "Contest not found!");
 
     // check that user can unbond
-    if (contests_iterator->status == STATUS_SETTELED) {
+    if (contests_iterator->status == STATUS_JUDGED) {
          eosio_assert(contests_iterator->winner != specifier, "Only winner endpoint allows unbond");
 
          bool is_redeemed = false;
@@ -149,12 +149,12 @@ void Contest::c_unbond(EmbeddedToken embededd_token, Bondage bondage, name issue
                  break;
              }
          }
-         eosio_assert(!is_redeemed, "Already redeemed!");
+         eosio_assert(is_redeemed, "Already redeemed!");
 
          action(
              permission_level{ _self, "active"_n },
              zap_token, "transfer"_n,
-             std::make_tuple(_self, issuer, to_asset(contests_iterator->winValue), "reward")
+             std::make_tuple(_self, issuer, to_asset(contests_iterator->winValue), std::string("reward"))
          ).send();         
 
          std::vector<name> redeemed = contests_iterator->redeemed;
@@ -164,7 +164,7 @@ void Contest::c_unbond(EmbeddedToken embededd_token, Bondage bondage, name issue
          });
     } else {
         bool can_unbond = contests_iterator->status == STATUS_CANCELED || contests_iterator->finish <= now_time;
-        eosio_assert(!can_unbond, "Can not unbond before contest finish!");
+        eosio_assert(can_unbond, "Can not unbond before contest finish!");
 
         bool specifier_exists = false;
         for (std::string e: contests_iterator->endpoints) {
@@ -173,7 +173,7 @@ void Contest::c_unbond(EmbeddedToken embededd_token, Bondage bondage, name issue
                 break;
             }
         }
-        eosio_assert(!specifier_exists, "Specifier not found!");
+        eosio_assert(specifier_exists, "Specifier not found!");
 
         // send provider zap tokens to bond
         bondage.noauth_unbond(provider, provider, specifier, dots, issuer);

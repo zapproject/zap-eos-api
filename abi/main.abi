@@ -41,7 +41,7 @@
                 {
                     "name": "redeemed",
                     "type": "name[]"
-                },
+                }
             ]
         },
         {

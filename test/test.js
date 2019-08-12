@@ -84,37 +84,37 @@ describe('Main', function () {
             });
         })
 
-        it('#transaction()', async () => {
-            let accounts = node.getAccounts();
-            let transferTransaction = new Transaction()
-                .receiver(accounts.token)
-                .action('transfer')
-                .sender(accounts.user, 'active')
-                .data({from: accounts.user.name, to: accounts.provider.name, quantity: '7 TST', memo: 'hi'})
-                .build();
+        // it('#transaction()', async () => {
+        //     let accounts = node.getAccounts();
+        //     let transferTransaction = new Transaction()
+        //         .receiver(accounts.token)
+        //         .action('transfer')
+        //         .sender(accounts.user, 'active')
+        //         .data({from: accounts.user.name, to: accounts.provider.name, quantity: '7 TST', memo: 'hi'})
+        //         .build();
 
-            let manualCreatedTransaction = {
-                actions: [
-                    {
-                        account: accounts.token.name,
-                        name: 'transfer',
-                        authorization: [{
-                            actor: accounts.user.name,
-                            permission: accounts.user.default_auth
-                        }],
+        //     let manualCreatedTransaction = {
+        //         actions: [
+        //             {
+        //                 account: accounts.token.name,
+        //                 name: 'transfer',
+        //                 authorization: [{
+        //                     actor: accounts.user.name,
+        //                     permission: accounts.user.default_auth
+        //                 }],
 
-                        data: {
-                            from: accounts.user.name,
-                            to: accounts.provider.name,
-                            quantity: '7 TST',
-                            memo: 'hi'
-                        }
-                    }
-                ]
-            };
+        //                 data: {
+        //                     from: accounts.user.name,
+        //                     to: accounts.provider.name,
+        //                     quantity: '7 TST',
+        //                     memo: 'hi'
+        //                 }
+        //             }
+        //         ]
+        //     };
 
-            await expect(JSON.stringify(transferTransaction)).to.be.equal(JSON.stringify(manualCreatedTransaction));
-        });
+        //     await expect(JSON.stringify(transferTransaction)).to.be.equal(JSON.stringify(manualCreatedTransaction));
+        // });
 
         it('#accounts()', async () => {
             let eos = await node.connect();
@@ -133,20 +133,21 @@ describe('Main', function () {
             let eos = await node.connect();
             await node.registerAccounts(eos);
             let res = await node.deploy(eos);
+
             for (let i in res) {
                 for (let j in res[i]) {
                     await expect(res[i][j].processed.receipt.status).to.be.equal('executed');
                 }
             }
-        }).timeout(20000);
+        }).timeout(40000);
 
-        it('#issueTokens()', async () => {
-            let eos = await node.connect();
-            await node.registerAccounts(eos);
-            await node.deploy(eos);
-            let res = await node.issueTokens(eos);
-            await expect(res.processed.receipt.status).to.be.equal('executed');
-        }).timeout(20000);
+        // it('#issueTokens()', async () => {
+        //     let eos = await node.connect();
+        //     await node.registerAccounts(eos);
+        //     await node.deploy(eos);
+        //     let res = await node.issueTokens(eos);
+        //     await expect(res.processed.receipt.status).to.be.equal('executed');
+        // }).timeout(20000);
 
         it('#grantPermissions()', async () => {
             let eos = await node.connect();
@@ -170,8 +171,65 @@ describe('Main', function () {
             node.kill();
         })
     });
+
     describe('Contracts', function () {
-        let node = new TestNode(true, false);
+        let node = new TestNode(false, false);
+
+        /*
+        [[eosio::action]] 
+    void cinit(name provider, uint64_t finish, name oracle, std::vector<db::endp> endpoints);
+
+    [[eosio::action]]
+    void cjudge(uint64_t contest_id, name provider, name oracle, std::string winner, uint64_t win_value);
+
+    [[eosio::action]]
+    void csettle(name provider, uint64_t contest_id);
+
+    [[eosio::action]]
+    void cbond(name issuer, name provider, uint64_t contest_id, std::string specifier, uint64_t dots);
+
+    [[eosio::action]]
+    void cunbond(name issuer, name provider, uint64_t contest_id, std::string specifier, uint64_t dots);
+        */
+        function createCinitTransaction(finish, oracle, endpoints) {
+            return new Transaction()
+                .sender(node.getAccounts().provider, 'active')
+                .receiver(node.getAccounts().main)
+                .action('cinit')
+                .data({ provider: node.getAccounts().provider.name, finish: finish, oracle: oracle, endpoints: endpoints });
+        }
+
+        function createCsettleTransaction(contest_id) {
+            return new Transaction()
+                .sender(node.getAccounts().provider, 'active')
+                .receiver(node.getAccounts().main)
+                .action('csettle')
+                .data({ provider: node.getAccounts().provider.name, contest_id: contest_id });
+        }
+
+        function createCjudgeTransaction(contest_id, oracle, winner, win_value) {
+            return new Transaction()
+                .sender(node.getAccounts().provider, 'active')
+                .receiver(node.getAccounts().main)
+                .action('cjudge')
+                .data({ provider: node.getAccounts().provider.name, contest_id: contest_id, oracle: oracle, winner: winner, win_value: win_value });
+        }
+
+        function createCbondTransaction(contest_id, specifier, dots) {
+            return new Transaction()
+                .sender(node.getAccounts().user, 'active')
+                .receiver(node.getAccounts().main)
+                .action('cbond')
+                .data({ issuer: node.getAccounts().user.name, provider: node.getAccounts().provider.name, contest_id: contest_id, specifier: specifier, dots: dots });
+        }
+
+        function createCunbondTransaction(contest_id, specifier, dots) {
+            return new Transaction()
+                .sender(node.getAccounts().user, 'active')
+                .receiver(node.getAccounts().main)
+                .action('cunbond')
+                .data({ issuer: node.getAccounts().user.name, provider: node.getAccounts().provider.name, contest_id: contest_id, specifier: specifier, dots: dots });
+        }
 
         function createNewProviderTransaction(title, key) {
             return new Transaction()
@@ -279,7 +337,7 @@ describe('Main', function () {
 
 
         beforeEach(function (done) {
-            this.timeout(30000);
+            this.timeout(40000);
             configureEnvironment(async () => {
                 try {
                     await node.restart();
@@ -301,13 +359,13 @@ describe('Main', function () {
                 .data({
                     from: node.getAccounts().user.name,
                     to: node.getAccounts().provider.name,
-                    quantity: '7 TST',
+                    quantity: '7.0000 EOS',
                     memo: 'hi'
                 })
                 .execute(eos);
 
-            let tokensAmount = await eos.getCurrencyBalance('zap.token', 'provider', 'TST');
-            await expect(tokensAmount[0].toString()).to.be.equal('7 TST');
+            let tokensAmount = await eos.getCurrencyBalance('eosio.token', 'provider', 'EOS');
+            await expect(tokensAmount[0].toString()).to.be.equal('7.0000 EOS');
         });
 
         it('#newprovider()', async () => {
@@ -536,6 +594,134 @@ describe('Main', function () {
             await expect(s_holder.rows[0].dots).to.be.equal(0);
             await expect(s_holder.rows[0].escrow).to.be.equal(0);
         });
+
+        //c_init, c_settle, c_judge, c_bond, c_unbond
+        it('#cinit() - init contest', async () => {
+            let eos = await node.connect();
+            let date = new Date();
+            let finish = new Date(date.setTime(date.getTime() + 1 * 86400000 ));
+            let endpoints = new Array();
+            endpoints.push({
+                specifier: 'endp1',
+                functions: [3, 0, 0, 2, 10000],
+                maximum_supply: '1000 SPA'
+            });
+            endpoints.push({
+                specifier: 'endp2',
+                functions: [3, 0, 0, 2, 10000],
+                maximum_supply: '1000 SPB'
+            });
+
+            await createNewProviderTransaction('test', 1)
+                .merge(createCinitTransaction(finish.getDate(), node.getAccounts().provider.name, endpoints))
+                .execute(eos);
+        });
+
+        it('#csettle() - settle contest', async () => {
+            let eos = await node.connect();
+
+            let date = new Date();
+            let finish = new Date(date.setTime(date.getTime() + 1 * 86400000 ));
+            let endpoints = new Array();
+            endpoints.push({
+                specifier: 'endp1',
+                functions: [3, 0, 0, 2, 10000],
+                maximum_supply: '1000 SPA'
+            });
+            endpoints.push({
+                specifier: 'endp2',
+                functions: [3, 0, 0, 2, 10000],
+                maximum_supply: '1000 SPB'
+            });
+
+            let contest_id = 0;
+
+            await createNewProviderTransaction('test', 1)
+                .merge(createCinitTransaction(finish.getDate(), node.getAccounts().provider.name, endpoints))
+                .merge(createCsettleTransaction(contest_id))
+                .execute(eos);
+        });
+
+        it('#cjudge() - judge contest', async () => {
+            let eos = await node.connect();
+
+            let date = new Date();
+            let finish = new Date(date.setTime(date.getTime() + 1 * 86400000 ));
+            let endpoints = new Array();
+            endpoints.push({
+                specifier: 'endp1',
+                functions: [3, 0, 0, 2, 10000],
+                maximum_supply: '1000 SPA'
+            });
+            endpoints.push({
+                specifier: 'endp2',
+                functions: [3, 0, 0, 2, 10000],
+                maximum_supply: '1000 SPB'
+            });
+
+            let contest_id = 0;
+
+            await createNewProviderTransaction('test', 1)
+                .merge(createCinitTransaction(finish.getDate(), node.getAccounts().provider.name, endpoints))
+                .merge(createCsettleTransaction(contest_id))
+                .merge(createCjudgeTransaction(contest_id, node.getAccounts().provider.name, 'endp1', 0))
+                .execute(eos);
+        });
+
+        it('#cbond() - bond to contest', async () => {
+            let eos = await node.connect();
+
+            let date = new Date();
+            let finish = new Date(date.setTime(date.getTime() + 1 * 86400000 ));
+            let endpoints = new Array();
+            endpoints.push({
+                specifier: 'endp1',
+                functions: [3, 0, 0, 2, 10000],
+                maximum_supply: '1000 SPA'
+            });
+            endpoints.push({
+                specifier: 'endp2',
+                functions: [3, 0, 0, 2, 10000],
+                maximum_supply: '1000 SPB'
+            });
+
+            let contest_id = 0;
+
+            await createNewProviderTransaction('test', 1)
+                .merge(createCinitTransaction(finish.getDate(), node.getAccounts().provider.name, endpoints))
+                .merge(createCsettleTransaction(contest_id))
+                .merge(createCbondTransaction(contest_id, 'endp1', 1))
+                .execute(eos);
+        });
+
+        it('#cunbond() - unbond from contest', async () => {
+            let eos = await node.connect();
+
+            let date = new Date();
+            let finish = new Date(date.setTime(date.getTime() + 1 * 86400000 ));
+            let endpoints = new Array();
+            endpoints.push({
+                specifier: 'endp1',
+                functions: [3, 0, 0, 2, 10000],
+                maximum_supply: '1000 SPA'
+            });
+            endpoints.push({
+                specifier: 'endp2',
+                functions: [3, 0, 0, 2, 10000],
+                maximum_supply: '1000 SPB'
+            });
+
+            let contest_id = 0;
+
+            await createNewProviderTransaction('test', 1)
+                .merge(createCinitTransaction(finish.getDate(), node.getAccounts().provider.name, endpoints))
+                .merge(createCsettleTransaction(contest_id))
+                .merge(createCbondTransaction(contest_id, 'endp1', 1))
+                .merge(createCjudgeTransaction(contest_id, node.getAccounts().provider.name, 'endp1', 1))
+                .merge(createCunbondTransaction(contest_id, 'endp1', 1))
+                .execute(eos);
+        });
+
 
         after(function () {
             node.kill();
