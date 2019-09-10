@@ -129,7 +129,6 @@ class Node {
         await this._waitNodeStartup(STARTUP_TIMEOUT);
         return Eos(this.eos_test_config);
     }
-
 }
 
 module.exports = Node;

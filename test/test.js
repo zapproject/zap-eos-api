@@ -29,7 +29,7 @@ async function getRowsByPrimaryKey(eos, node, {scope, table_name, table_key}) {
 describe('Main', function () {
 
     describe('EOS Node', function () {
-        let node = new TestNode(true, false);
+        let node = new TestNode(false, false);
 
         beforeEach(function (done) {
             this.timeout(30000);
@@ -84,37 +84,37 @@ describe('Main', function () {
             });
         })
 
-        // it('#transaction()', async () => {
-        //     let accounts = node.getAccounts();
-        //     let transferTransaction = new Transaction()
-        //         .receiver(accounts.token)
-        //         .action('transfer')
-        //         .sender(accounts.user, 'active')
-        //         .data({from: accounts.user.name, to: accounts.provider.name, quantity: '7 TST', memo: 'hi'})
-        //         .build();
+        it('#transaction()', async () => {
+            let accounts = node.getAccounts();
+            let transferTransaction = new Transaction()
+                .receiver(accounts.token)
+                .action('transfer')
+                .sender(accounts.user, 'active')
+                .data({from: accounts.user.name, to: accounts.provider.name, quantity: '7.0000 EOS', memo: 'hi'})
+                .build();
 
-        //     let manualCreatedTransaction = {
-        //         actions: [
-        //             {
-        //                 account: accounts.token.name,
-        //                 name: 'transfer',
-        //                 authorization: [{
-        //                     actor: accounts.user.name,
-        //                     permission: accounts.user.default_auth
-        //                 }],
+            let manualCreatedTransaction = {
+                actions: [
+                    {
+                        account: accounts.token.name,
+                        name: 'transfer',
+                        authorization: [{
+                            actor: accounts.user.name,
+                            permission: accounts.user.default_auth
+                        }],
 
-        //                 data: {
-        //                     from: accounts.user.name,
-        //                     to: accounts.provider.name,
-        //                     quantity: '7 TST',
-        //                     memo: 'hi'
-        //                 }
-        //             }
-        //         ]
-        //     };
+                        data: {
+                            from: accounts.user.name,
+                            to: accounts.provider.name,
+                            quantity: '7.0000 EOS',
+                            memo: 'hi'
+                        }
+                    }
+                ]
+            };
 
-        //     await expect(JSON.stringify(transferTransaction)).to.be.equal(JSON.stringify(manualCreatedTransaction));
-        // });
+            await expect(JSON.stringify(transferTransaction)).to.be.equal(JSON.stringify(manualCreatedTransaction));
+        });
 
         it('#accounts()', async () => {
             let eos = await node.connect();
@@ -332,6 +332,16 @@ describe('Main', function () {
                     provider: node.getAccounts().provider.name,
                     endpoint: endpoint,
                     from_sub: 0
+                });
+        }
+
+        function createTestRpTransaction() {
+            return new Transaction()
+                .sender(node.getAccounts().user, 'active')
+                .receiver(node.getAccounts().main)
+                .action('testrp')
+                .data({
+                    issuer: node.getAccounts().user.name
                 });
         }
 
@@ -721,7 +731,6 @@ describe('Main', function () {
                 .merge(createCunbondTransaction(contest_id, 'endp1', 1))
                 .execute(eos);
         });
-
 
         after(function () {
             node.kill();

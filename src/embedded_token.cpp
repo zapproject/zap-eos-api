@@ -266,8 +266,19 @@ void EmbeddedToken::internal_transfer(name from,
 
     auto payer = has_auth(to) ? to : from;
 
-    sub_balance(from, quantity);
+    sub_balance(from, quantity, payer);
     add_balance(to, quantity, payer);
+}
+
+void EmbeddedToken::sub_balance(name owner, asset value, name ram_payer) {
+    db::accounts from_acnts(_self, owner.value);
+
+    const auto &from = from_acnts.get(value.symbol.code().raw(), "no balance object found");
+    eosio_assert(from.balance.amount >= value.amount, "overdrawn balance");
+
+    from_acnts.modify(from, ram_payer, [&](auto &a) {
+        a.balance -= value;
+    });
 }
 
 void EmbeddedToken::sub_balance(name owner, asset value) {

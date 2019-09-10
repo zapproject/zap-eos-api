@@ -45,8 +45,6 @@ void TdFactory::td_bond(EmbeddedToken embededd_token, Bondage bondage, name issu
 }
 
 void TdFactory::td_unbond(EmbeddedToken embededd_token, Bondage bondage, name issuer, name provider, std::string specifier, uint64_t dots) {
-    require_auth(issuer);
-
     // find factory token
     db::ftokenIndex ftokens(_self, provider.value);
     auto ftokens_index = ftokens.get_index<"byhash"_n>();

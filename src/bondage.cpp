@@ -109,7 +109,7 @@ void Bondage::unbond(name subscriber, name provider, std::string endpoint, uint6
     print_f("Transfer tokens action have sent, price is %.\n", price);
 }
 
-void Bondage::noauth_unbond(name subscriber, name provider, std::string endpoint, uint64_t dots, name dotsPayer) {
+void Bondage::noauth_unbond(name subscriber, name provider, std::string endpoint, uint64_t dots, name ram_payer) {
     db::holderIndex holders(_self, subscriber.value);
     db::endpointIndex endpoints(_self, provider.value);
     db::issuedIndex issued(_self, provider.value);
@@ -117,7 +117,7 @@ void Bondage::noauth_unbond(name subscriber, name provider, std::string endpoint
     auto holders_index = holders.get_index<"byhash"_n>();
     auto holders_iterator = holders_index.find(db::hash(provider, endpoint));
     eosio_assert(holders_iterator != holders_index.end(), "Holder doesn't exists.");
-    
+
     // Check that subscriber can unbond dots
     auto endpoint_index = endpoints.get_index<"byhash"_n>();
     auto endpoints_iterator = endpoint_index.find(db::hash(provider, endpoint));
@@ -134,17 +134,12 @@ void Bondage::noauth_unbond(name subscriber, name provider, std::string endpoint
 
     // Update total issued dots for current endpoint
     uint64_t endpoint_id = endpoints_iterator->id;
-    uint64_t total_issued_dots = Bondage::update_issued(issued, dotsPayer, endpoint_id, -dots);
-    
-    // Update subsciber dots balance for current endpoint
-    Bondage::update_holder(holders, dotsPayer, provider, endpoint, -dots, 0);
- 
-    // Calculate amount of zap tokens that user will pay for dots
-    uint64_t price = Bondage::get_withdraw_price(endpoints.get(endpoint_id), total_issued_dots, dots);
+    uint64_t total_issued_dots = Bondage::update_issued(issued, ram_payer, endpoint_id, -dots);
 
-    // Transfer subscriber tokens to zap.bondage address
-    transfer_tokens(_self, dotsPayer, price, "unbond");
-    print_f("Transfer tokens action have sent, price is %.\n", price);
+    // Update subsciber dots balance for current endpoint
+    Bondage::update_holder(holders, ram_payer, provider, endpoint, -dots, 0);
+    uint64_t price = Bondage::get_withdraw_price(endpoints.get(endpoints_iterator->id), total_issued_dots, dots);
+    transfer_tokens_deffered(_self, ram_payer, price, "unbond", ram_payer);
 }
 
 void Bondage::estimate(name provider, std::string endpoint, uint64_t dots) {

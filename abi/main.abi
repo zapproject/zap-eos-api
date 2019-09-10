@@ -837,10 +837,40 @@
                     "type": "uint64"
                 }
             ]
+        },
+        {
+            "name": "testrp",
+            "base": "",
+            "fields": [
+                {
+                    "name": "issuer",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "rpcallback",
+            "base": "",
+            "fields": [
+                {
+                    "name": "issuer",
+                    "type": "name"
+                }
+            ]
         }
     ],
     "types": [],
     "actions": [
+        {
+            "name": "rpcallback",
+            "type": "rpcallback",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "testrp",
+            "type": "testrp",
+            "ricardian_contract": ""
+        },
         {
             "name": "tdbond",
             "type": "tdbond",

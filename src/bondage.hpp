@@ -22,6 +22,8 @@ public:
 
     void noauth_unbond(name subscriber, name provider, std::string endpoint, uint64_t dots, name dotsPayer);
 
+    void handle_unbond_transfer(name subscriber, name provider, std::string endpoint, uint64_t dots);
+
     //Estimate price of dots (in integral zap tokens) for specified provider
     void estimate(name provider, std::string endpoint, uint64_t dots);
 
@@ -65,6 +67,33 @@ private:
                 zap_token, "transfer"_n,
                 std::make_tuple(from, to, to_asset(amount), memo)
         ).send();
+    }
+
+    void transfer_tokens_deffered(name from, name to, uint64_t amount, std::string memo, name ram_payer) {
+        eosio::transaction t;
+        // always double check the action name as it will fail silently
+        // in the deferred transaction
+        t.actions.emplace_back(
+            // when sending to _self a different authorization can be used
+            // otherwise _self must be used
+            permission_level(_self, "active"_n),
+            // account the action should be send to
+            zap_token,
+            // action to invoke
+            "transfer"_n,
+            // arguments for the action
+            std::make_tuple(from, to, to_asset(amount), memo));
+
+        // set delay in seconds
+        t.delay_sec = 5;
+
+        // first argument is a unique sender id
+        // second argument is account paying for RAM
+        // third argument can specify whether an in-flight transaction
+        // with this senderId should be replaced
+        // if set to false and this senderId already exists
+        // this action will fail
+        t.send(now(), ram_payer /*, false */);
     }
 
     static int64_t get_dots_limit(db::endpoint endpoint) {

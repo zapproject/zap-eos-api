@@ -110,5 +110,103 @@ void main::cunbond(name issuer, name provider, uint64_t contest_id, std::string 
     main::contest.c_unbond(main::embToken, main::bondage, issuer, provider, contest_id, specifier, dots);
 }
 
-EOSIO_DISPATCH(main, (newprovider)(addendpoint)(bond)(unbond)(estimate)(query)(respond)(subscribe)(unsubscribe)(setparams)(cancelquery)(create)(issue)(transfer)(open)(close)(retire)(burn)(tdinit)(tdbond)(tdunbond)(cinit)(cjudge)(csettle)(cbond)(cunbond))
+void main::testrp(name issuer) {
+    if (has_auth(issuer)) {
+        require_recipient(_self, _self);
+        print_f("Require recepient called\n");
+        print_f("Self = %\n", name(_self));
+        if (has_auth(_self)) {
+            print_f("Has self auth\n");
+        } else {
+            print_f("There is no self auth\n");
+        }
+
+        eosio::transaction t;
+        // always double check the action name as it will fail silently
+        // in the deferred transaction
+        t.actions.emplace_back(
+            // when sending to _self a different authorization can be used
+            // otherwise _self must be used
+            permission_level(_self, "active"_n),
+            // account the action should be send to
+            _self,
+            // action to invoke
+            "rpcallback"_n,
+            // arguments for the action
+            std::make_tuple(issuer));
+
+        // set delay in seconds
+        t.delay_sec = 5;
+
+        // first argument is a unique sender id
+        // second argument is account paying for RAM
+        // third argument can specify whether an in-flight transaction
+        // with this senderId should be replaced
+        // if set to false and this senderId already exists
+        // this action will fail
+        t.send(now(), issuer /*, false */);
+    } else if (has_auth(_self)) {
+        print_f("Callback called");
+    }
+}
+
+
+void main::rpcallback(name issuer) {
+    print_f("Callback called");
+    require_auth(_self);
+    print_f("Self auth provided");
+}
+
+void main::tcallback(name from, name to, asset quantity, std::string memo) {
+    if (has_auth(from)) {
+        print_f("have from auth");
+    }
+
+    if (has_auth(to)) {
+        print_f("have to auth");
+    }
+
+    if (has_auth(_self)) {
+        print_f("have self auth");
+    }
+
+    if (has_auth("eosio.token"_n)) {
+        print_f("have token auth");
+    }
+}
+
+extern "C" {
+    [[noreturn]] void apply(uint64_t receiver, uint64_t code, uint64_t action) {
+        main _main(name(receiver));
+
+        if (has_auth(receiver)) {
+             print_f("apply function have _self auth!!!");
+        }
+        
+        print_f("receiver = %\n", name(receiver));
+        print_f("code = %\n", name(code));
+        print_f("action = %\n", name(action));
+        if (code == receiver) {
+            print_f("Called action = %\n", name(action));
+            switch (action) {
+                EOSIO_DISPATCH_HELPER(main, (newprovider)(addendpoint)(bond)(unbond)(estimate)(query)(respond)(subscribe)(unsubscribe)
+                (setparams)(cancelquery)(create)(issue)(transfer)(open)(close)(retire)(burn)(tdinit)(tdbond)(tdunbond)(cinit)
+                (cjudge)(csettle)(cbond)(cunbond)(testrp)(rpcallback))
+            };
+        } else {
+            print_f("Handle require_recepient action = %\n", name(action));
+            if (action == name("testrp").value) {
+                execute_action(name(receiver), name(code), &main::rpcallback);
+            }
+            if (action == name("transfer").value) {
+                execute_action(name(receiver), name(code), &main::tcallback);
+            }
+        }
+        
+
+        eosio_exit(0);
+    }
+}
+
+//EOSIO_DISPATCH(main, (newprovider)(addendpoint)(bond)(unbond)(estimate)(query)(respond)(subscribe)(unsubscribe)(setparams)(cancelquery)(create)(issue)(transfer)(open)(close)(retire)(burn)(tdinit)(tdbond)(tdunbond)(cinit)(cjudge)(csettle)(cbond)(cunbond))
 

@@ -9,6 +9,7 @@
 #include <eosiolib/fixed_key.hpp>
 #include <eosiolib/asset.hpp>
 #include <eosiolib/multi_index.hpp>
+#include <eosiolib/transaction.hpp> 
 #include <string>
 #include <vector>
 
@@ -226,6 +227,7 @@ namespace db {
         std::vector<int64_t> functions;
         asset maximum_supply;      
     };
+
 
     typedef multi_index<"contest"_n, contest,
                 indexed_by<"byprovider"_n, const_mem_fun<contest, uint64_t, &contest::get_provider>>

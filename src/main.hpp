@@ -121,12 +121,21 @@ public:
     [[eosio::action]]
     void cunbond(name issuer, name provider, uint64_t contest_id, std::string specifier, uint64_t dots);
 
+    [[eosio::action]]
+    void testrp(name issuer);
+
+    [[eosio::action]]
+    void rpcallback(name issuer);
+
+    [[eosio::action]]
+    void tcallback(name from, name to, asset quantity, std::string memo);
+
 private:
     Bondage bondage = Bondage(get_self());
     Registry registry = Registry(get_self());
     Dispatcher dispatcher = Dispatcher(get_self());
     EmbeddedToken embToken = EmbeddedToken(get_self());
     TdFactory tdFactory = TdFactory(get_self());
-    Contest contest = Contest(get_self());
+    Contest contest = Contest(get_self());   
 };
 
