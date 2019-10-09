@@ -15,14 +15,12 @@ public:
     //Buy dots for specified endpoint
     void bond(name subscriber, name provider, std::string endpoint, uint64_t dots);
 
-    void noauth_bond(name subscriber, name provider, std::string endpoint, uint64_t dots, name dotsPayer);
+    void internal_bond(name subscriber, name provider, std::string endpoint, uint64_t dots, name dotsPayer);
 
     //Withdraw dots for specified provider
     void unbond(name subscriber, name provider, std::string endpoint, uint64_t dots);
 
-    void noauth_unbond(name subscriber, name provider, std::string endpoint, uint64_t dots, name dotsPayer);
-
-    void handle_unbond_transfer(name subscriber, name provider, std::string endpoint, uint64_t dots);
+    void internal_unbond(name subscriber, name provider, std::string endpoint, uint64_t dots, name dotsPayer);
 
     //Estimate price of dots (in integral zap tokens) for specified provider
     void estimate(name provider, std::string endpoint, uint64_t dots);

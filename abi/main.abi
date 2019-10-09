@@ -3,6 +3,24 @@
     "version": "eosio::abi/1.1",
     "structs": [
         {
+            "name": "fee",
+            "base": "",
+            "fields": [
+                {
+                    "name": "id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "account",
+                    "type": "name"
+                },
+                {
+                    "name": "min_amount",
+                    "type": "uint64"
+                }
+            ]
+        },
+        {
             "name": "contest",
             "base": "",
             "fields": [
@@ -839,22 +857,16 @@
             ]
         },
         {
-            "name": "testrp",
+            "name": "setfee",
             "base": "",
             "fields": [
                 {
-                    "name": "issuer",
+                    "name": "account",
                     "type": "name"
-                }
-            ]
-        },
-        {
-            "name": "rpcallback",
-            "base": "",
-            "fields": [
+                },
                 {
-                    "name": "issuer",
-                    "type": "name"
+                    "name": "min_amount",
+                    "type": "uint64"
                 }
             ]
         }
@@ -862,13 +874,8 @@
     "types": [],
     "actions": [
         {
-            "name": "rpcallback",
-            "type": "rpcallback",
-            "ricardian_contract": ""
-        },
-        {
-            "name": "testrp",
-            "type": "testrp",
+            "name": "setfee",
+            "type": "setfee",
             "ricardian_contract": ""
         },
         {
@@ -1091,6 +1098,13 @@
             "index_type": "i64",
             "key_names": ["primary_key", "get_provider"],
             "key_types": ["uint64", "uint64"]
+        },
+        {
+            "name": "fee",
+            "type": "fee",
+            "index_type": "i64",
+            "key_names": ["primary_key"],
+            "key_types": ["uint64"]
         }
     ],
     "ricardian_clauses": [],

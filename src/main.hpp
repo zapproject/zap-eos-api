@@ -122,13 +122,7 @@ public:
     void cunbond(name issuer, name provider, uint64_t contest_id, std::string specifier, uint64_t dots);
 
     [[eosio::action]]
-    void testrp(name issuer);
-
-    [[eosio::action]]
-    void rpcallback(name issuer);
-
-    [[eosio::action]]
-    void tcallback(name from, name to, asset quantity, std::string memo);
+    void setfee(name account, uint64_t min_amount);
 
 private:
     Bondage bondage = Bondage(get_self());

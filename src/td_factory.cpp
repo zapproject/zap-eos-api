@@ -37,7 +37,7 @@ void TdFactory::td_bond(EmbeddedToken embededd_token, Bondage bondage, name issu
     eosio_assert(ftokens_iterator != ftokens_index.end(), "Factory token not found!");
 
     // send provider zap tokens to bond
-    bondage.noauth_bond(provider, provider, specifier, dots, issuer);
+    bondage.internal_bond(provider, provider, specifier, dots, issuer);
 
     // mint factory token to issuer
     asset tokens_to_mint = to_asset(dots, ftokens_iterator->supply.symbol);
@@ -52,7 +52,7 @@ void TdFactory::td_unbond(EmbeddedToken embededd_token, Bondage bondage, name is
     eosio_assert(ftokens_iterator != ftokens_index.end(), "Factory token not found!");
 
     // send provider zap tokens to bond
-    bondage.noauth_unbond(provider, provider, specifier, dots, issuer);
+    bondage.internal_unbond(provider, provider, specifier, dots, issuer);
 
     // mint factory token to issuer
     asset tokens_to_burn = to_asset(dots, ftokens_iterator->supply.symbol);

@@ -3,6 +3,7 @@
 
 #define ZAP_TOKEN_SYMBOL "EOS"
 #define ZAP_TOKEN_DECIMALS 4
+#define FEE_HOLDER_ID 1
 
 #include <eosiolib/eosio.hpp>
 #include <eosiolib/crypto.h>
@@ -221,6 +222,16 @@ namespace db {
         EOSLIB_SERIALIZE(contest, (id)(provider)(oracle)(finish)(status)(winner)(endpoints)(winValue)(redeemed))
     };
 
+    struct [[eosio::table]] fee {
+        uint64_t id;
+        name account;
+        uint64_t min_amount;
+
+        uint64_t primary_key() const { return id; }
+
+        EOSLIB_SERIALIZE(fee, (id)(account)(min_amount))
+    };
+
     // not stored in db
     struct endp {
         std::string specifier;
@@ -228,6 +239,7 @@ namespace db {
         asset maximum_supply;      
     };
 
+    typedef multi_index<"fee"_n, fee> feeIndex;
 
     typedef multi_index<"contest"_n, contest,
                 indexed_by<"byprovider"_n, const_mem_fun<contest, uint64_t, &contest::get_provider>>

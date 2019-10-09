@@ -82,7 +82,7 @@ void Contest::c_settle(Bondage bondage, name provider, uint64_t contest_id) {
 
         auto issued_iterator = issued.find(endpoints_iterator->id);
         if (issued_iterator != issued.end() && issued_iterator->dots > 0) {
-             bondage.noauth_bond(provider, provider, endpoints_iterator->specifier, issued_iterator->dots, provider);
+             bondage.internal_unbond(provider, provider, endpoints_iterator->specifier, issued_iterator->dots, provider);
         }
     }
 
@@ -122,7 +122,7 @@ void Contest::c_bond(EmbeddedToken embededd_token, Bondage bondage, name issuer,
 
    
     // send provider zap tokens to bond
-    bondage.noauth_bond(provider, provider, specifier, dots, issuer);
+    bondage.internal_bond(provider, provider, specifier, dots, issuer);
 
     // mint factory token to issuer
     asset tokens_to_mint = to_asset(dots, ftokens_iterator->supply.symbol);
@@ -176,7 +176,7 @@ void Contest::c_unbond(EmbeddedToken embededd_token, Bondage bondage, name issue
         eosio_assert(specifier_exists, "Specifier not found!");
 
         // send provider zap tokens to bond
-        bondage.noauth_unbond(provider, provider, specifier, dots, issuer);
+        bondage.internal_unbond(provider, provider, specifier, dots, issuer);
     }
    
     // find factory token

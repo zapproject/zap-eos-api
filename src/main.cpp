@@ -110,68 +110,24 @@ void main::cunbond(name issuer, name provider, uint64_t contest_id, std::string 
     main::contest.c_unbond(main::embToken, main::bondage, issuer, provider, contest_id, specifier, dots);
 }
 
-void main::testrp(name issuer) {
-    if (has_auth(issuer)) {
-        require_recipient(_self, _self);
-        print_f("Require recepient called\n");
-        print_f("Self = %\n", name(_self));
-        if (has_auth(_self)) {
-            print_f("Has self auth\n");
-        } else {
-            print_f("There is no self auth\n");
-        }
-
-        eosio::transaction t;
-        // always double check the action name as it will fail silently
-        // in the deferred transaction
-        t.actions.emplace_back(
-            // when sending to _self a different authorization can be used
-            // otherwise _self must be used
-            permission_level(_self, "active"_n),
-            // account the action should be send to
-            _self,
-            // action to invoke
-            "rpcallback"_n,
-            // arguments for the action
-            std::make_tuple(issuer));
-
-        // set delay in seconds
-        t.delay_sec = 5;
-
-        // first argument is a unique sender id
-        // second argument is account paying for RAM
-        // third argument can specify whether an in-flight transaction
-        // with this senderId should be replaced
-        // if set to false and this senderId already exists
-        // this action will fail
-        t.send(now(), issuer /*, false */);
-    } else if (has_auth(_self)) {
-        print_f("Callback called");
-    }
-}
-
-
-void main::rpcallback(name issuer) {
-    print_f("Callback called");
+void main::setfee(name account, uint64_t min_amount) {
     require_auth(_self);
-    print_f("Self auth provided");
-}
+    eosio_assert(min_amount > 0, "Min amount must be > 0");
 
-void main::tcallback(name from, name to, asset quantity, std::string memo) {
-    if (has_auth(from)) {
-        print_f("have from auth");
-    }
+    db::feeIndex fees(_self, _self.value);
 
-    if (has_auth(to)) {
-        print_f("have to auth");
-    }
-
-    if (has_auth(_self)) {
-        print_f("have self auth");
-    }
-
-    if (has_auth("eosio.token"_n)) {
-        print_f("have token auth");
+    auto fees_iterator = fees.find(FEE_HOLDER_ID);
+    if (fees_iterator != fees.end()) {
+        fees.modify(fees_iterator, _self, [&](auto &f) {
+            f.account = account;
+            f.min_amount = min_amount;
+        });
+    } else {
+        fees.emplace(_self, [&](auto &f) {
+            f.id = FEE_HOLDER_ID;
+            f.account = account;
+            f.min_amount = min_amount;
+        });
     }
 }
 
@@ -191,18 +147,9 @@ extern "C" {
             switch (action) {
                 EOSIO_DISPATCH_HELPER(main, (newprovider)(addendpoint)(bond)(unbond)(estimate)(query)(respond)(subscribe)(unsubscribe)
                 (setparams)(cancelquery)(create)(issue)(transfer)(open)(close)(retire)(burn)(tdinit)(tdbond)(tdunbond)(cinit)
-                (cjudge)(csettle)(cbond)(cunbond)(testrp)(rpcallback))
+                (cjudge)(csettle)(cbond)(cunbond))
             };
-        } else {
-            print_f("Handle require_recepient action = %\n", name(action));
-            if (action == name("testrp").value) {
-                execute_action(name(receiver), name(code), &main::rpcallback);
-            }
-            if (action == name("transfer").value) {
-                execute_action(name(receiver), name(code), &main::tcallback);
-            }
-        }
-        
+        }        
 
         eosio_exit(0);
     }
