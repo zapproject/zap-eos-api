@@ -13,7 +13,7 @@ Software versions
  - Mocha
 
 How to run:
-- make copy of ./main.abi
-- cmake ./
-- make all
-- replace ./build/main/main.abi by copied main.abi
+- docker-compose up
+- docker-compose run eos bash -c "cd /app && bash ./rebuild.sh"
+- docker-compose run eos bash -c "cd /app && npm install"
+- docker-compose run eos bash -c "cd /app && npm test"

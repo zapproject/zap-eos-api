@@ -15,8 +15,12 @@ public:
     //Buy dots for specified endpoint
     void bond(name subscriber, name provider, std::string endpoint, uint64_t dots);
 
+    void internal_bond(name subscriber, name provider, std::string endpoint, uint64_t dots, name dotsPayer);
+
     //Withdraw dots for specified provider
     void unbond(name subscriber, name provider, std::string endpoint, uint64_t dots);
+
+    void internal_unbond(name subscriber, name provider, std::string endpoint, uint64_t dots, name dotsPayer);
 
     //Estimate price of dots (in integral zap tokens) for specified provider
     void estimate(name provider, std::string endpoint, uint64_t dots);
@@ -48,7 +52,7 @@ private:
     name _self;
 
     //TODO: must be changed to prod account
-    const name zap_token = "zap.token"_n;
+    const name zap_token = "eosio.token"_n;
 
     //Convert specified amount of tokens to <asset> structure
     eosio::asset to_asset(uint64_t tokensAmount) {
@@ -61,6 +65,33 @@ private:
                 zap_token, "transfer"_n,
                 std::make_tuple(from, to, to_asset(amount), memo)
         ).send();
+    }
+
+    void transfer_tokens_deffered(name from, name to, uint64_t amount, std::string memo, name ram_payer) {
+        eosio::transaction t;
+        // always double check the action name as it will fail silently
+        // in the deferred transaction
+        t.actions.emplace_back(
+            // when sending to _self a different authorization can be used
+            // otherwise _self must be used
+            permission_level(_self, "active"_n),
+            // account the action should be send to
+            zap_token,
+            // action to invoke
+            "transfer"_n,
+            // arguments for the action
+            std::make_tuple(from, to, to_asset(amount), memo));
+
+        // set delay in seconds
+        t.delay_sec = 5;
+
+        // first argument is a unique sender id
+        // second argument is account paying for RAM
+        // third argument can specify whether an in-flight transaction
+        // with this senderId should be replaced
+        // if set to false and this senderId already exists
+        // this action will fail
+        t.send(now(), ram_payer /*, false */);
     }
 
     static int64_t get_dots_limit(db::endpoint endpoint) {
@@ -141,6 +172,7 @@ private:
         }
         return holders_iterator;
     }
+
 };
 
 //EOSIO_ABI(Bondage, (bond)(unbond)(estimate)(escrow)(release)(viewhe)(viewh)(viewi))

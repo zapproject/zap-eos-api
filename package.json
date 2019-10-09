@@ -17,8 +17,7 @@
     "eosjs-ecc": "^4.0.4",
     "mocha": "^5.2.0",
     "sleep": "^5.2.3",
-    "tree-kill": "^1.2.1",
-    "wast2wasm": "0.0.1"
+    "tree-kill": "^1.2.1"
   },
   "devDependencies": {},
   "scripts": {

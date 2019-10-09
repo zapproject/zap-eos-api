@@ -7,6 +7,7 @@ void Bondage::bond(name subscriber, name provider, std::string endpoint, uint64_
     db::holderIndex holders(_self, subscriber.value);
     db::endpointIndex endpoints(_self, provider.value);
     db::issuedIndex issued(_self, provider.value);
+    db::feeIndex fees(_self, _self.value);
 
     auto endpoint_index = endpoints.get_index<"byhash"_n>();
     auto endpoint_iterator = endpoint_index.find(db::hash(provider, endpoint));
@@ -28,12 +29,72 @@ void Bondage::bond(name subscriber, name provider, std::string endpoint, uint64_
     // Calculate amount of zap tokens that user will pay for dots
     uint64_t price = Bondage::get_dots_price(current_endpoint, current_issued_dots, dots);
 
+    // calculate fee
+    auto fee_iterator = fees.find(FEE_HOLDER_ID);
+    eosio_assert(fee_iterator != fees.end(), "Fee not specified.");
+
+    uint64_t fee = price / 100;
+    if (fee < fee_iterator->min_amount) {
+        fee = fee_iterator->min_amount;
+    }
+
     // Transfer subscriber tokens to zap.bondage address
     transfer_tokens(subscriber, _self, price, "bond");
     print_f("Transfer tokens action have sent, price is %.\n", price);
 
+    // Transfer fee tokens to fee account address
+    transfer_tokens(subscriber, fee_iterator->account, fee, "zap_fee");
+    print_f("Transfer fee tokens action have sent, fee is %.\n", fee);
+
     // Update subsciber dots balance for current endpoint
     Bondage::update_holder(holders, subscriber, provider, endpoint, dots, 0);
+}
+
+void Bondage::internal_bond(name subscriber, name provider, std::string endpoint, uint64_t dots, name dotsPayer) {
+    db::holderIndex holders(_self, subscriber.value);
+    db::endpointIndex endpoints(_self, provider.value);
+    db::issuedIndex issued(_self, provider.value);
+    db::feeIndex fees(_self, _self.value);
+
+    auto endpoint_index = endpoints.get_index<"byhash"_n>();
+    auto endpoint_iterator = endpoint_index.find(db::hash(provider, endpoint));
+    eosio_assert(endpoint_iterator != endpoint_index.end(), "Endpoint not found.");
+    print_f("Endpoint item found, id = %.\n", endpoint_iterator->id);
+
+    if (endpoint_iterator->broker.value != 0) {
+        eosio_assert(endpoint_iterator->broker == subscriber, "Only broker can bond to this endpoint.");
+    }
+ 
+
+    // Update total issued dots for current endpoint
+    uint64_t endpoint_id = endpoint_iterator->id;
+    uint64_t current_issued_dots = Bondage::update_issued(issued, dotsPayer, endpoint_id, dots);
+
+    db::endpoint current_endpoint = endpoints.get(endpoint_id);
+    eosio_assert(current_issued_dots <= Bondage::get_dots_limit(current_endpoint), "Dots limit exceeded");
+
+    // Calculate amount of zap tokens that user will pay for dots
+    uint64_t price = Bondage::get_dots_price(current_endpoint, current_issued_dots, dots);
+
+     // calculate fee
+    auto fee_iterator = fees.find(FEE_HOLDER_ID);
+    eosio_assert(fee_iterator != fees.end(), "Fee not specified.");
+
+    uint64_t fee = price / 100;
+    if (fee < fee_iterator->min_amount) {
+        fee = fee_iterator->min_amount;
+    }
+
+    // Transfer subscriber tokens to zap.bondage address
+    transfer_tokens(dotsPayer, _self, price, "bond");
+    print_f("Transfer tokens action have sent, price is %.\n", price);
+
+     // Transfer fee tokens to fee account address
+    transfer_tokens(dotsPayer, fee_iterator->account, fee, "zap_fee");
+    print_f("Transfer fee tokens action have sent, fee is %.\n", fee);
+
+    // Update subsciber dots balance for current endpoint
+    Bondage::update_holder(holders, dotsPayer, provider, endpoint, dots, 0);
 }
 
 void Bondage::unbond(name subscriber, name provider, std::string endpoint, uint64_t dots) {
@@ -72,8 +133,41 @@ void Bondage::unbond(name subscriber, name provider, std::string endpoint, uint6
     uint64_t price = Bondage::get_withdraw_price(endpoints.get(endpoint_id), total_issued_dots, dots);
 
     // Transfer subscriber tokens to zap.bondage address
-    transfer_tokens(_self, subscriber, price, "unbond");
+    transfer_tokens_deffered(_self, subscriber, price, "unbond", subscriber);
     print_f("Transfer tokens action have sent, price is %.\n", price);
+}
+
+void Bondage::internal_unbond(name subscriber, name provider, std::string endpoint, uint64_t dots, name ram_payer) {
+    db::holderIndex holders(_self, subscriber.value);
+    db::endpointIndex endpoints(_self, provider.value);
+    db::issuedIndex issued(_self, provider.value);
+
+    auto holders_index = holders.get_index<"byhash"_n>();
+    auto holders_iterator = holders_index.find(db::hash(provider, endpoint));
+    eosio_assert(holders_iterator != holders_index.end(), "Holder doesn't exists.");
+
+    // Check that subscriber can unbond dots
+    auto endpoint_index = endpoints.get_index<"byhash"_n>();
+    auto endpoints_iterator = endpoint_index.find(db::hash(provider, endpoint));
+    eosio_assert(endpoints_iterator != endpoint_index.end(), "Endpoint doesn't exists.");
+
+    if (endpoints_iterator->broker.value != 0) {
+        eosio_assert(endpoints_iterator->broker == subscriber, "Only broker can unbond from this endpoint.");
+    }
+
+    auto issued_iterator = issued.find(endpoints_iterator->id);
+    eosio_assert(issued_iterator != issued.end(), "Holder doesn't exists.");
+    eosio_assert(issued_iterator->dots >= dots, "Endpoint haven't got enough dots for withdraw.");
+    eosio_assert(holders_iterator->dots >= dots, "Holder haven't got enough dots for withdraw.");
+
+    // Update total issued dots for current endpoint
+    uint64_t endpoint_id = endpoints_iterator->id;
+    uint64_t total_issued_dots = Bondage::update_issued(issued, ram_payer, endpoint_id, -dots);
+
+    // Update subsciber dots balance for current endpoint
+    Bondage::update_holder(holders, ram_payer, provider, endpoint, -dots, 0);
+    uint64_t price = Bondage::get_withdraw_price(endpoints.get(endpoints_iterator->id), total_issued_dots, dots);
+    transfer_tokens_deffered(_self, ram_payer, price, "unbond", ram_payer);
 }
 
 void Bondage::estimate(name provider, std::string endpoint, uint64_t dots) {

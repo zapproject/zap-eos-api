@@ -3,6 +3,9 @@
 #include "bondage.cpp"
 #include "registry.cpp"
 #include "dispatcher.cpp"
+#include "embedded_token.cpp"
+#include "td_factory.cpp"
+#include "contest.cpp"
 
 using namespace eosio;
 
@@ -64,8 +67,69 @@ public:
     [[eosio::action]]
     void cancelquery(name subscriber, uint64_t query_id);
 
+
+    // EMBEDDED TOKEN ACTIONS
+    [[eosio::action]]
+    void create(name issuer, asset maximum_supply);
+
+    [[eosio::action]] 
+    void issue(name to, asset quantity, string memo);
+
+    [[eosio::action]] 
+    void mint(name to, asset quantity);
+
+    [[eosio::action]] 
+    void burn(name from, asset quantity);
+
+    [[eosio::action]] 
+    void retire(asset quantity, string memo);
+
+    [[eosio::action]] 
+    void transfer(name from, name to, asset quantity, string memo);
+
+    [[eosio::action]] 
+    void open(name owner, const symbol &symbol, name ram_payer);
+
+    [[eosio::action]] 
+    void close(name owner, const symbol &symbol);
+
+
+    // TOKEN DOT FACTORY ACTIONS
+    [[eosio::action]] 
+    void tdinit(name provider, std::string specifier, std::vector<int64_t> functions, asset maximum_supply);
+
+    [[eosio::action]] 
+    void tdbond(name issuer, name provider, std::string specifier, uint64_t dots);
+
+    [[eosio::action]] 
+    void tdunbond(name issuer, name provider, std::string specifier, uint64_t dots);
+
+
+    // CONTEST ACTIONS
+    [[eosio::action]] 
+    void cinit(name provider, uint64_t finish, name oracle, std::vector<db::endp> endpoints);
+
+    [[eosio::action]]
+    void cjudge(uint64_t contest_id, name provider, name oracle, std::string winner, uint64_t win_value);
+
+    [[eosio::action]]
+    void csettle(name provider, uint64_t contest_id);
+
+    [[eosio::action]]
+    void cbond(name issuer, name provider, uint64_t contest_id, std::string specifier, uint64_t dots);
+
+    [[eosio::action]]
+    void cunbond(name issuer, name provider, uint64_t contest_id, std::string specifier, uint64_t dots);
+
+    [[eosio::action]]
+    void setfee(name account, uint64_t min_amount);
+
 private:
     Bondage bondage = Bondage(get_self());
     Registry registry = Registry(get_self());
     Dispatcher dispatcher = Dispatcher(get_self());
+    EmbeddedToken embToken = EmbeddedToken(get_self());
+    TdFactory tdFactory = TdFactory(get_self());
+    Contest contest = Contest(get_self());   
 };
+

@@ -1,0 +1,8 @@
+version: '2'
+services:
+  eos:
+    build:
+      context: .
+      dockerfile: eos.dockerfile
+    volumes:
+      - ./:/app

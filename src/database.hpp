@@ -1,14 +1,16 @@
 #ifndef DATABASE_HEADER
 #define DATABASE_HEADER
 
-#define ZAP_TOKEN_SYMBOL "TST"
-#define ZAP_TOKEN_DECIMALS 0
+#define ZAP_TOKEN_SYMBOL "EOS"
+#define ZAP_TOKEN_DECIMALS 4
+#define FEE_HOLDER_ID 1
 
 #include <eosiolib/eosio.hpp>
 #include <eosiolib/crypto.h>
 #include <eosiolib/fixed_key.hpp>
 #include <eosiolib/asset.hpp>
 #include <eosiolib/multi_index.hpp>
+#include <eosiolib/transaction.hpp> 
 #include <string>
 #include <vector>
 
@@ -66,6 +68,7 @@ namespace db {
         std::vector<int64_t> functions;
 
         uint64_t primary_key() const { return id; }
+        uint64_t get_provider() const { return provider.value; }
 
         // I haven't found any examples of fixed_bytes<32> usage, but, according doc, multi_index supports 256 bytes secondary keys 
         // this secondary key allows to find item with specified provider and specifier by using find() method
@@ -160,9 +163,102 @@ namespace db {
     };
 
 
+    //Embedded token tables
+    struct [[eosio::table]] account {
+        asset balance;
+
+        uint64_t primary_key() const { return balance.symbol.code().raw(); }
+
+        EOSLIB_SERIALIZE(account, (balance))
+    };
+
+    struct [[eosio::table]] currency_stats {
+        asset supply;
+        asset max_supply;
+        name issuer;
+
+        uint64_t primary_key() const { return supply.symbol.code().raw(); }
+
+        EOSLIB_SERIALIZE(currency_stats, (supply)(max_supply)(issuer))
+    };
+
+    //All token dot factory providers
+    struct [[eosio::table]] fprovider {
+        name provider;
+
+        uint64_t primary_key() const { return provider.value; }
+
+        EOSLIB_SERIALIZE(fprovider, (provider))
+    };
+ 
+    //Token dot factory tables
+    struct [[eosio::table]] ftoken {
+        uint64_t id;
+        asset supply;
+        std::string endpoint;
+        name provider;
+
+        uint64_t primary_key() const { return id; }
+        fixed_bytes<32> by_hash() const { return db::hash(provider, endpoint); }
+
+        EOSLIB_SERIALIZE(ftoken, (id)(supply)(endpoint)(provider))
+    };
+
+    //Contest
+    struct [[eosio::table]] contest {
+        uint64_t id;
+        name provider;
+        name oracle;
+        uint64_t finish;
+        uint64_t status;
+        std::string winner;
+        std::vector<std::string> endpoints;
+        uint64_t winValue;
+        std::vector<name> redeemed;
+
+        uint64_t primary_key() const { return id; }
+        uint64_t get_provider() const { return provider.value; }
+
+        EOSLIB_SERIALIZE(contest, (id)(provider)(oracle)(finish)(status)(winner)(endpoints)(winValue)(redeemed))
+    };
+
+    struct [[eosio::table]] fee {
+        uint64_t id;
+        name account;
+        uint64_t min_amount;
+
+        uint64_t primary_key() const { return id; }
+
+        EOSLIB_SERIALIZE(fee, (id)(account)(min_amount))
+    };
+
+    // not stored in db
+    struct endp {
+        std::string specifier;
+        std::vector<int64_t> functions;
+        asset maximum_supply;      
+    };
+
+    typedef multi_index<"fee"_n, fee> feeIndex;
+
+    typedef multi_index<"contest"_n, contest,
+                indexed_by<"byprovider"_n, const_mem_fun<contest, uint64_t, &contest::get_provider>>
+            > contestIndex;
+
+    typedef multi_index<"ftoken"_n, ftoken,
+                indexed_by<"byhash"_n, const_mem_fun<ftoken, fixed_bytes<32>, &ftoken::by_hash>>
+            > ftokenIndex;
+
+    typedef multi_index<"fprovider"_n, fprovider> fproviderIndex;
+
+    typedef multi_index<"accounts"_n, account> accounts;
+    typedef multi_index<"stat"_n, currency_stats> stats;
+
+
     typedef multi_index<"provider"_n, provider> providerIndex;
 
     typedef multi_index<"endpoint"_n, endpoint,
+                indexed_by<"byprovider"_n, const_mem_fun<endpoint, uint64_t, &endpoint::get_provider>>,
                 indexed_by<"byhash"_n, const_mem_fun<endpoint, fixed_bytes<32>, &endpoint::by_hash>>
             > endpointIndex;
 
